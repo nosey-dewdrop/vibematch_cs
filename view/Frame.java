@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import controller.AuthController;
+import model.User;
 //import java.awt.Color;
 
 // this is basically the whole app's brain right now -- holds the outer CardLayout,
@@ -26,6 +28,11 @@ public class Frame extends JFrame {
     String user_email = "";
     String user_name = "student";
     String archetype = "???";
+
+    // real auth now (see login_functionality.md) -- LoginSignupPanel and
+    // EmailVerificationPanel actually call into this now instead of faking it
+    AuthController authController = new AuthController();
+    User currentUser; // whoever's actually logged in, null til that happens
 
     LoginSignupPanel loginPanel;
     EmailVerificationPanel verifyPanel;

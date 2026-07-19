@@ -13,6 +13,8 @@ import java.awt.GridLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.util.Arrays;
+import model.User;
 
 // screen 1 -- log in AND sign up share this one panel, just toggles which
 // fields/labels show. this is what controller/AuthController.java is meant to
@@ -149,17 +151,49 @@ public class LoginSignupPanel extends JPanel {
             return;
         }
 
+        char[] pass_chars = pass_field.getPassword();
+        String password = new String(pass_chars);
+        if (password.length() == 0){
+            JOptionPane.showMessageDialog(this, "password can't be empty!");
+            return;
+        }
+
         frame.user_email = email;
         if (name_field.getText().length() > 0){
             frame.user_name = name_field.getText();
         }
 
         if (signup_mode){
-            // TODO: real registration + VerificationService (Ahmeds part -- see
-            // model/User.java + model/VerificationService.java for the scaffolding)
+            boolean ok = frame.authController.handleSignup(email, password);
+            Arrays.fill(pass_chars, ' '); // dont need the plaintext hanging around anymore, wipe it
+            if (!ok){
+                JOptionPane.showMessageDialog(this, "there's already an account with that email!");
+                return;
+            }
             frame.go_to("verify");
         }else{
-            // TODO: real login check against database , for now just goes in
+            // real login now (login_functionality.md) -- used to just skip straight
+            // to "home" no matter what you typed, now it actually checks stuff
+            User user = frame.authController.getUser(email);
+            if (user == null){
+                Arrays.fill(pass_chars, ' ');
+                JOptionPane.showMessageDialog(this, "no account with that email, sign up first!");
+                return;
+            }
+            if (!user.isVerified()){
+                // gotta finish the code step before you can log in, send them back there
+                Arrays.fill(pass_chars, ' ');
+                JOptionPane.showMessageDialog(this, "verify your email before logging in!");
+                frame.go_to("verify");
+                return;
+            }
+            boolean ok = frame.authController.handleLogin(email, password);
+            Arrays.fill(pass_chars, ' ');
+            if (!ok){
+                JOptionPane.showMessageDialog(this, "wrong password!");
+                return;
+            }
+            frame.currentUser = user;
             frame.go_to("home");
         }
     }

@@ -4,6 +4,7 @@ import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
+import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import java.awt.GridLayout;
@@ -67,18 +68,28 @@ public class EmailVerificationPanel extends JPanel {
         JButton verifyButton = new JButton("Verify");
         verifyButton.setPreferredSize(new Dimension(140, 40));
         verifyButton.setFocusable(false);
-        // TODO: actually check the code against VerificationService (Ahmeds part --
-        // model/VerificationService.verifyToken() is the scaffolding for this)
-        // right now literally any code works , even empty
+        // real check now (login_functionality.md) -- used to accept literally
+        // anything, now it actually goes through AuthController.handleVerify()
+        // -> VerificationService.verifyToken() and can say no
         verifyButton.addActionListener(e -> {
-            countdown.stop();
-            frame.go_to("interests");
+            String code = code1.getText() + code2.getText() + code3.getText() + code4.getText();
+            boolean ok = frame.authController.handleVerify(code);
+            if (ok){
+                countdown.stop();
+                frame.go_to("interests");
+            }else{
+                JOptionPane.showMessageDialog(this, "that code isn't right, check your \"email\" (the console) and try again");
+            }
         });
 
         resendButton = new JButton("resend code");
         resendButton.setFocusable(false);
         resendButton.setEnabled(false);
-        resendButton.addActionListener(e -> refresh());
+        // actually asks for a new code now instead of just resetting the timer
+        resendButton.addActionListener(e -> {
+            frame.authController.resendVerification(frame.user_email);
+            refresh();
+        });
 
         buttonRow.add(verifyButton);
         buttonRow.add(resendButton);

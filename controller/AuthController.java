@@ -2,6 +2,8 @@ package controller;
 
 import model.User;
 import model.VerificationService;
+import java.util.Map;
+import java.util.HashMap;
 
 /*
  * CONTROLLER -- AuthController
@@ -11,29 +13,52 @@ import model.VerificationService;
  * handles: account creation, Bilkent email verification, login. per Table 5
  * this lines up with Ahmed Khalil Salim's classes (User, VerificationService).
  *
- * status: SCAFFOLD ONLY, and NOT wired into the view/ package yet. the current
- * click-through prototype's LoginSignupPanel.java / EmailVerificationPanel.java
- * do their own placeholder logic (just an @ug.bilkent.edu.tr string check) --
- * once this controller is for real, those panels should call into this instead.
- * left untouched for now since thats a bigger change than "add scaffolding".
+ * status: real now, wired into LoginSignupPanel.java / EmailVerificationPanel.java
+ * (see login_functionality.md for the full writeup). still in-memory only tho --
+ * usersByEmail below is just standing in for the database until that gets built.
  */
 public class AuthController {
 
     VerificationService verificationService = new VerificationService();
+    Map<String, User> usersByEmail = new HashMap<>();
 
     public boolean handleSignup(String email, String password){
-        // TODO: make a new User, call user.register(), then verificationService.sendVerificationEmail(user)
-        return false;
+        if (usersByEmail.containsKey(email)){
+            return false; // someone already signed up with that email, no dupes
+        }
+        User user = new User(email, password);
+        user.register();
+        usersByEmail.put(email, user);
+        verificationService.sendVerificationEmail(user);
+        return true;
     }
 
     public boolean handleLogin(String email, String password){
-        // TODO: look up the User and call user.login(email, password)
-        return false;
+        User user = usersByEmail.get(email);
+        if (user == null){
+            return false; // no account at all with that email
+        }
+        return user.login(email, password);
     }
 
     public boolean handleVerify(String token){
-        // TODO: verificationService.verifyToken(token)
-        return false;
+        return verificationService.verifyToken(token);
+    }
+
+    // not one of the report's 3 handler methods, but the view needs this -- e.g.
+    // to check isVerified() before letting someone log in, or to resend a code.
+    // keeps usersByEmail itself private so the view cant poke around in it directly
+    public User getUser(String email){
+        return usersByEmail.get(email);
+    }
+
+    public boolean resendVerification(String email){
+        User user = usersByEmail.get(email);
+        if (user == null){
+            return false;
+        }
+        verificationService.sendVerificationEmail(user);
+        return true;
     }
 
 }
