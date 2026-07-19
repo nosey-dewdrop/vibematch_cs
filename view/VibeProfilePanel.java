@@ -1,0 +1,118 @@
+package view;
+
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
+import javax.swing.SwingConstants;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.util.Random;
+
+// screen 5 -- shows off whatever frame.pick_archetype() rolled + 4 random trait
+// bars. this is what model/PersonalityResult.java is standing in for right now
+public class VibeProfilePanel extends JPanel {
+
+    Frame frame;
+    JLabel archetypeLabel;
+    JLabel descLabel;
+    JProgressBar energyBar;
+    JProgressBar socialBar;
+    JProgressBar creativityBar;
+    JProgressBar chillBar;
+    Random rand = new Random();
+
+    VibeProfilePanel(Frame frame){
+        this.frame = frame;
+        setBackground(new Color(245, 243, 250));
+        setLayout(new BorderLayout());
+
+        JPanel topPanel = new JPanel(new GridLayout(3, 1));
+        topPanel.setBackground(new Color(245, 243, 250));
+        JLabel title = new JLabel("Your Vibe Profile", SwingConstants.CENTER);
+        title.setFont(new Font("Arial", Font.PLAIN, 18));
+        title.setForeground(Color.GRAY);
+
+        archetypeLabel = new JLabel("???", SwingConstants.CENTER);
+        archetypeLabel.setFont(new Font("Arial", Font.BOLD, 36));
+        archetypeLabel.setForeground(new Color(103, 58, 183));
+
+        descLabel = new JLabel("", SwingConstants.CENTER);
+        descLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+
+        topPanel.add(title);
+        topPanel.add(archetypeLabel);
+        topPanel.add(descLabel);
+        add(topPanel, BorderLayout.NORTH);
+
+
+        // the trait bars , values are fake for now
+        JPanel barsPanel = new JPanel(new GridLayout(4, 2, 10, 18));
+        barsPanel.setBackground(new Color(245, 243, 250));
+
+        energyBar = new JProgressBar(0, 100);
+        socialBar = new JProgressBar(0, 100);
+        creativityBar = new JProgressBar(0, 100);
+        chillBar = new JProgressBar(0, 100);
+        energyBar.setStringPainted(true);
+        socialBar.setStringPainted(true);
+        creativityBar.setStringPainted(true);
+        chillBar.setStringPainted(true);
+
+        barsPanel.add(new JLabel("Energy", SwingConstants.RIGHT));
+        barsPanel.add(energyBar);
+        barsPanel.add(new JLabel("Social", SwingConstants.RIGHT));
+        barsPanel.add(socialBar);
+        barsPanel.add(new JLabel("Creativity", SwingConstants.RIGHT));
+        barsPanel.add(creativityBar);
+        barsPanel.add(new JLabel("Chill", SwingConstants.RIGHT));
+        barsPanel.add(chillBar);
+
+        JPanel centerWrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 40));
+        centerWrap.setBackground(new Color(245, 243, 250));
+        barsPanel.setPreferredSize(new Dimension(450, 220));
+        centerWrap.add(barsPanel);
+        add(centerWrap, BorderLayout.CENTER);
+
+
+        JPanel bottomPanel = new JPanel(new FlowLayout());
+        bottomPanel.setBackground(new Color(245, 243, 250));
+        JButton goButton = new JButton("Lets Go!");
+        goButton.setPreferredSize(new Dimension(180, 45));
+        goButton.setFocusable(false);
+        goButton.addActionListener(e -> frame.go_to("home"));
+        bottomPanel.add(goButton);
+        add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    public void refresh(){
+        // this line does nothing (sets the text to whatever it already was), the
+        // real update is the line right after it. harmless, just leftover
+        archetypeLabel.setText(archetypeLabel.getText());
+        archetypeLabel.setText(frame.archetype);
+
+        // prefered way would be storing these with the archetype but this works
+        if (frame.archetype.equals("The Explorer")){
+            descLabel.setText("curious, always down for something new");
+        }else if (frame.archetype.equals("The Harmonizer")){
+            descLabel.setText("the glue of every friend group");
+        }else if (frame.archetype.equals("The Thinker")){
+            descLabel.setText("quiet on the outside, 100 tabs open on the inside");
+        }else if (frame.archetype.equals("The Spark")){
+            descLabel.setText("brings the energy wherever they go");
+        }else{
+            descLabel.setText("");
+        }
+
+        // fake trait values , the real ones come from the quiz later
+        energyBar.setValue(rand.nextInt(60) + 40);
+        socialBar.setValue(rand.nextInt(60) + 40);
+        creativityBar.setValue(rand.nextInt(60) + 40);
+        chillBar.setValue(rand.nextInt(60) + 40);
+    }
+
+}
