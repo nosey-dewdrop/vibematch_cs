@@ -13,15 +13,19 @@ import model.Message;
  * ModerationFilter to ensure it meets the platform's moderation rules."
  * so sendMessage() below should basically just be a thin pass-through to that.
  *
- * status: SCAFFOLD ONLY, NOT wired into the view/ package. CommunityChatsPanel.java
- * in view/ appends straight to a view.Message list with no moderation at all right
- * now (theres literally a TODO comment there saying so) -- this is what should
- * replace it eventually.
+ * status: first pass, logic done. still NOT wired into the view/ package --
+ * CommunityChatsPanel.java in view/ appends straight to a view.Message list with no
+ * moderation at all right now (theres literally a TODO comment there saying so) --
+ * this is what should replace it eventually.
  */
 public class ChatController {
 
-    public void sendMessage(GroupChat chat, Message message){
-        // TODO: chat.postMessage(message); -- moderation happens inside postMessage(), see GroupChat.java
+    // thin pass-through, exactly like the report describes it in 3.3. the controller
+    // doesnt do moderation itself -- it just hands the message to the chat and lets
+    // GroupChat.postMessage() run the filter. returns whether it went through so the
+    // view can show the sender a "message blocked" note instead of silently eating it
+    public boolean sendMessage(GroupChat chat, Message message){
+        return chat.postMessage(message);
     }
 
 }
