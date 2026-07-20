@@ -1,0 +1,7 @@
+# the real mail credentials -- NEVER commit this, it has the app password in it
+credentials.properties
+
+# compiled output
+*.class
+out/
+bin/
