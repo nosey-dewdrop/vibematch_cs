@@ -1,35 +1,47 @@
 # vibematch
 
-Bilkent öğrencileri için topluluk eşleştirme uygulaması. İlgi alanlarını seçiyorsun, kısa bir kişilik testi yapıyorsun, uygulama sana uyan toplulukları gösteriyor. Topluluklara katılabilir, sohbet edebilir, forum açabilir, arkadaş ekleyebilirsin.
+A community matching app for Bilkent students. You pick your interests, take a short personality test, and the app shows you communities that actually fit you. You can join them, chat, post in the forum, and add friends.
 
-## nasıl çalışır?
+## tech stack
 
-Bir sunucu ve bir istemci var. Sunucu tek makinede çalışır ve veritabanını tutar. Diğerleri ağ üzerinden bağlanır. Bir şey olduğunda (mesaj, arkadaşlık isteği) sana anında iletilir, yenileme gerekmez.
+- Java 21, Swing (desktop UI)
+- TCP socket client-server architecture (port 5050)
+- SQLite (persistent database, sqlite-jdbc)
+- Gson (JSON serialization, protocol layer)
+- JavaMail + Gmail SMTP (email verification)
+- MVC architecture: model / service / server / screens layers separated
 
-## çalıştırmak için
+## how it works
 
-Önce sunucuyu başlat:
+There is a server and a client. The server runs on one machine and holds the database. Everyone else connects to it over the network. When something happens (a message, a friend request) it gets pushed to you live, no refresh needed.
+
+## running it
+
+Start the server first:
 ```
 ./run-server.sh
 ```
 
-Sonra başka bir terminalde istemciyi aç:
+Then open the client in another terminal:
 ```
 ./run.sh
 ```
 
-Farklı bir laptoptan bağlanıyorsan:
+If you are connecting from a different laptop on the same wifi:
 ```
-./run.sh <sunucu makinenin ip adresi>
+./run.sh <server ip address>
 ```
 
-Sunucunun ip adresini öğrenmek için: `ipconfig getifaddr en0`
+To find the server machine's ip, run this in the server's terminal:
+```
+ipconfig getifaddr en0
+```
 
-## demo hesapları
+## demo accounts
 
-Veritabanı ilk çalıştırmada kendini oluşturur. Bu hesaplardan herhangiyle giriş yapabilirsin:
+The database seeds itself on first run. You can log in with any of these:
 
-| kullanıcı adı | email | şifre |
+| username | email | password |
 |---|---|---|
 | ada | ada@ug.bilkent.edu.tr | vibe1234 |
 | mert | mert@ug.bilkent.edu.tr | vibe1234 |
@@ -37,29 +49,29 @@ Veritabanı ilk çalıştırmada kendini oluşturur. Bu hesaplardan herhangiyle 
 | can | can@ug.bilkent.edu.tr | vibe1234 |
 | elif | elif@ug.bilkent.edu.tr | vibe1234 |
 
-Gerçek Bilkent mailiyle de kayıt olunabilir. Sadece @ug.bilkent.edu.tr kabul eder.
+You can also sign up with your real Bilkent email. Only @ug.bilkent.edu.tr is accepted.
 
-## repo yapısı
+## repo structure
 
 ```
-model/        veri sınıfları (User, Community, Message ...)
-data/         veritabanı katmanı, sqlite
-server/       tcp sunucu, her istemci için ayrı thread
-net/          istemci tarafı soket bağlantısı
-service/      eşleştirme algoritması, mbti puanlama, auth
-screens/      tüm ekranlar
-protocol/     soket üzerindeki json formatı
-ui/           ortak swing bileşenleri ve tema
-model_cs/     ödev için yazılan orijinal model sınıfları
-controller/   ödev için yazılan orijinal controller sınıfları
+model/        data classes (User, Community, Message ...)
+data/         database layer, sqlite
+server/       tcp server, one thread per client
+net/          client side socket connection
+service/      matching algorithm, mbti scoring, auth
+screens/      all ui screens
+protocol/     json format used over the socket
+ui/           shared swing components and theme
+model_cs/     original model classes from the team assignment
+controller/   original controller classes from the team assignment
 ```
 
-## eşleştirme algoritması
+## matching algorithm
 
-İki şeye bakıyor. Topluluğun etiketleriyle ilgi alanlarının ne kadar örtüştüğü (yüzde 65 ağırlık) ve kişilik tipinin o topluluğun tipik üyesiyle ne kadar uyuştuğu (yüzde 35). Sonuç her kart üzerinde eşleşme yüzdesi olarak çıkıyor.
+It looks at two things: how many of the community's tags overlap with your interests (65% weight) and how close your personality type is to the typical member's type (35%). The result shows up as a match percent on each community card.
 
-## notlar
+## notes
 
-- Veriler çalıştırmalar arasında kalıcı. Sqlite dosyası: vibematch.db.
-- Doğrulama emaili isteğe bağlı. Smtp kurulu değilse kod sunucu konsoluna yazılır.
-- Farklı bir makineden bağlanmak için sunucu ve istemci aynı ağda olmalı.
+- Data persists between runs. SQLite file: vibematch.db.
+- Verification email is optional. If SMTP is not set up the code prints to the server console instead.
+- To connect from another machine, the server and client need to be on the same network.
