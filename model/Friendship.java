@@ -20,7 +20,7 @@ package model;
  * both clearly list it as a Model class, but flagging the mismatch in case
  * the diagram needs fixing before the report is final.
  *
- * status: SCAFFOLD ONLY.
+ * status: first pass. went with pending/accepted/declined as the three states.
  */
 public class Friendship {
 
@@ -29,21 +29,37 @@ public class Friendship {
     String status; // "pending" / "accepted" / "declined" probably, report doesnt give exact values
     String createdAt;
 
+    // a Friendship object only makes sense between two actual people, so it takes
+    // both users up front. requester is userA, receiver is userB -- that ordering
+    // only matters while its still pending, once accepted the report says it stops
+    // mattering who sent it
+    public Friendship(User requester, User receiver){
+        this.userA = requester;
+        this.userB = receiver;
+        this.status = "pending";
+    }
+
+    // fired when userA hits "add friend". the constructor already set pending, but
+    // i kept request() as its own step so the createdAt timestamp gets stamped at
+    // the moment its actually sent, not when the object happened to be built
     public void request(){
-        // TODO: create the pending row, userA = requester, userB = receiver
+        this.status = "pending";
+        this.createdAt = java.time.LocalDateTime.now().toString();
     }
 
     public void accept(){
-        // TODO: status = "accepted"
+        this.status = "accepted";
     }
 
+    // declined instead of deleting the row -- the report wasnt sure, but keeping it
+    // means userB doesnt get spammed with the same request over and over, we can see
+    // it was already answered
     public void decline(){
-        // TODO: status = "declined" (or just delete the row? report doesnt say)
+        this.status = "declined";
     }
 
     public boolean areFriends(){
-        // TODO: return status.equals("accepted") once status is actually a real thing
-        return false;
+        return status.equals("accepted");
     }
 
 }
