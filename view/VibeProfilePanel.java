@@ -81,7 +81,10 @@ public class VibeProfilePanel extends JPanel {
         JButton goButton = new JButton("Lets Go!");
         goButton.setPreferredSize(new Dimension(180, 45));
         goButton.setFocusable(false);
-        goButton.addActionListener(e -> frame.go_to("home"));
+        goButton.addActionListener(e -> {
+            frame.register_user_with_engine();
+            frame.go_to("home");
+        });
         bottomPanel.add(goButton);
         add(bottomPanel, BorderLayout.SOUTH);
     }

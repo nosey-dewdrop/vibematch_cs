@@ -6,7 +6,10 @@ import java.awt.CardLayout;
 import java.util.ArrayList;
 import java.util.Random;
 import controller.AuthController;
+import controller.CommunityController;
+import controller.ChatController;
 import model.PersonalityResult;
+import model.Tag;
 import model.User;
 //import java.awt.Color;
 
@@ -30,6 +33,8 @@ public class Frame extends JFrame {
     // real auth now (see login_functionality.md) -- LoginSignupPanel and
     // EmailVerificationPanel actually call into this now instead of faking it
     AuthController authController = new AuthController();
+    CommunityController communityController = new CommunityController();
+    ChatController chatController = new ChatController();
     User currentUser; // whoever's actually logged in, null til that happens
 
     LoginSignupPanel loginPanel;
@@ -105,6 +110,77 @@ public class Frame extends JFrame {
         go_to("detail");
     }
 
+    // call after login + onboarding so the engine knows who we are. personalityResult
+    // and interest tags come from the quiz/interest panels -- null is fine, engine
+    // skips whatever it doesnt have (cold-start design, section 4.2)
+    public void register_user_with_engine(){
+        if (currentUser == null){
+            return;
+        }
+        java.util.List<Tag> tags = new java.util.ArrayList<>();
+        if (personalityResult != null){
+            // archetype name doubles as a tag so communityHasTag() can match it
+            tags.add(new Tag(personalityResult.getResultType()));
+        }
+        communityController.getRecommendationEngine().setUserProfile(
+            currentUser, personalityResult, null, tags
+        );
+    }
+
+    // get real match % from the engine for a view community by name.
+    // falls back to the fake random one if the user isnt registered yet
+    public int get_match_percent(Community viewCommunity){
+        if (currentUser == null){
+            return viewCommunity.get_match_percent();
+        }
+        java.util.List<model.Community> all = communityController.getAllCommunities();
+        for (int i = 0; i < all.size(); i++){
+            if (all.get(i).getName().equals(viewCommunity.get_name())){
+                return communityController.getRecommendationEngine()
+                    .getMatchPercent(currentUser, all.get(i));
+            }
+        }
+        return viewCommunity.get_match_percent();
+    }
+
+    // join via the real model layer AND update the view layer so the card flips
+    public void join_community(Community viewCommunity){
+        if (!my_communities.contains(viewCommunity)){
+            my_communities.add(viewCommunity);
+            viewCommunity.member_count = viewCommunity.member_count + 1;
+        }
+        if (currentUser != null){
+            java.util.List<model.Community> all = communityController.getAllCommunities();
+            for (int i = 0; i < all.size(); i++){
+                if (all.get(i).getName().equals(viewCommunity.get_name())){
+                    communityController.joinCommunity(currentUser, all.get(i));
+                    break;
+                }
+            }
+        }
+    }
+
+    // send a message through the real moderation pipeline. returns false if blocked
+    public boolean send_chat_message(Community viewCommunity, String senderName, String text){
+        if (currentUser != null){
+            java.util.List<model.Community> all = communityController.getAllCommunities();
+            for (int i = 0; i < all.size(); i++){
+                if (all.get(i).getName().equals(viewCommunity.get_name())){
+                    model.GroupChat gc = all.get(i).getGroupChat();
+                    model.Message msg = new model.Message(
+                        java.util.UUID.randomUUID().toString(),
+                        currentUser.getUserId() != null ? currentUser.getUserId() : senderName,
+                        text,
+                        java.time.LocalDateTime.now().toString()
+                    );
+                    return chatController.sendMessage(gc, msg);
+                }
+            }
+        }
+        // no model community found -- let it through unfiltered (view-only fallback)
+        return true;
+    }
+
 
 
     // hardcoded seed data so there's something to click through -- these are
@@ -157,6 +233,27 @@ public class Frame extends JFrame {
         // fake match percents for now , real ones come from RecommendationEngine later
         for (int i = 0; i < all_communities.size(); i++) {
             all_communities.get(i).set_match_percent(rand.nextInt(45) + 55);
+        }
+
+        // mirror each view community into the real model layer so the controllers
+        // actually have something to work with. tag names match the category field
+        // so RecommendationEngine can score them once the user has tags from onboarding
+        String[][] seeds = {
+            {"Jazz Lovers",              "we listen to jazz and talk about jazz. thats it.",   "Music"},
+            {"Board Game Club",          "catan, chess, and everything in between",            "Games"},
+            {"Hiking Crew",              "weekend hikes around ankara, all levels welcome",    "Outdoor"},
+            {"Anime Watchers",           "weekly watch parties + seasonal rankings",           "Art & Media"},
+            {"Bilkent Chess Society",    "casual and rated games every week",                  "Games"},
+            {"Indie Music Nights",       "sharing playlists + going to local gigs together",   "Music"},
+            {"Animal Welfare Volunteers","helping the campus cats (and sometimes dogs)",       "Volunteering"},
+            {"Football 5v5",             "pickup games, dont have to be good just show up",    "Sports"},
+            {"Photography Walks",        "campus photo walks, phone cameras totally fine",     "Art & Media"},
+            {"Code & Coffee",            "side projects, leetcode crying sessions, coffee",    "Tech"}
+        };
+        for (int i = 0; i < seeds.length; i++) {
+            model.Community mc = new model.Community(seeds[i][0], seeds[i][1]);
+            mc.addTag(new Tag(seeds[i][2]));
+            communityController.addCommunity(mc);
         }
     }
 

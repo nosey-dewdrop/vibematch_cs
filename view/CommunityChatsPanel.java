@@ -118,10 +118,15 @@ public class CommunityChatsPanel extends JPanel {
             return; // dont send empty stuff
         }
 
-        // TODO: ModerationFilter check goes HERE before the message is added (Damlas part --
-        // controller/ChatController.sendMessage() -> model/GroupChat.postMessage() ->
-        // model/ModerationFilter.checkMessage() is the intended path, see those files)
-        // right now everything goes through unfiltered
+        // run through real moderation pipeline (ChatController -> GroupChat -> ModerationFilter)
+        boolean allowed = frame.send_chat_message(open_chat, frame.user_name, text);
+        if (!allowed){
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "message blocked by moderation filter.",
+                "blocked", javax.swing.JOptionPane.WARNING_MESSAGE);
+            inputField.setText("");
+            return;
+        }
 
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
         String time = sdf.format(new Date());
@@ -129,7 +134,6 @@ public class CommunityChatsPanel extends JPanel {
 
         inputField.setText("");
         load_chat();
-        //System.out.println("sent: " + text);
     }
 
 }

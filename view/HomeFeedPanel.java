@@ -87,7 +87,7 @@ public class HomeFeedPanel extends JPanel {
         textPart.setBackground(Color.WHITE);
         JLabel nameLabel = new JLabel("  " + c.get_name());
         nameLabel.setFont(new Font("Arial", Font.BOLD, 17));
-        JLabel matchLabel = new JLabel("  " + c.get_match_percent() + "% match");
+        JLabel matchLabel = new JLabel("  " + frame.get_match_percent(c) + "% match");
         matchLabel.setForeground(new Color(56, 142, 60));
         matchLabel.setFont(new Font("Arial", Font.BOLD, 13));
         JLabel memberLabel = new JLabel("  " + c.get_member_count() + " members  ·  " + c.get_category());
@@ -111,14 +111,7 @@ public class HomeFeedPanel extends JPanel {
             joinButton.setEnabled(false);
         }
         joinButton.addActionListener(e -> {
-            // single click join , like the report says.
-            // TODO: this should really be controller/CommunityController.joinCommunity()
-            // calling model.Community.addMember() -- right now it just pokes the
-            // view-layer demo fields directly since theres no real Model wiring yet
-            if (!frame.my_communities.contains(c)){
-                frame.my_communities.add(c);
-                c.member_count = c.member_count + 1;
-            }
+            frame.join_community(c);
             joinButton.setText("Joined");
             joinButton.setEnabled(false);
         });
