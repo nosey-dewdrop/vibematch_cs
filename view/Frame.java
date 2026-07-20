@@ -25,7 +25,6 @@ public class Frame extends JFrame {
     ArrayList<Community> my_communities = new ArrayList<>();
     String user_email = "";
     String user_name = "student";
-    String archetype = "???";
     PersonalityResult personalityResult;
 
     // real auth now (see login_functionality.md) -- LoginSignupPanel and

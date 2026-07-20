@@ -100,7 +100,7 @@ public class ProfileSettingsPanel extends JPanel {
 
     public void refresh(){
         emailLabel.setText("Email: " + frame.user_email);
-        typeLabel.setText("Vibe type: " + frame.archetype);
+        typeLabel.setText("Vibe type: " + frame.personalityResult.getResultType());
         nameField.setText(frame.user_name);
 
         if (frame.currentUser.getTags().size() == 0){

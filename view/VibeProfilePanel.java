@@ -11,10 +11,8 @@ import java.awt.GridLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.util.Random;
 
-// screen 5 -- shows off whatever frame.pick_archetype() rolled + 4 random trait
-// bars. this is what model/PersonalityResult.java is standing in for right now
+// screen 5
 public class VibeProfilePanel extends JPanel {
 
     Frame frame;
@@ -49,7 +47,7 @@ public class VibeProfilePanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
 
-        // the trait bars , values are fake for now
+        // the trait bars 
         JPanel barsPanel = new JPanel(new GridLayout(4, 2, 10, 18));
         barsPanel.setBackground(new Color(245, 243, 250));
 

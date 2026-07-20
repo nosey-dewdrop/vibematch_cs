@@ -107,7 +107,6 @@ public class PersonalityQuizPanel extends JPanel {
         PersonalityResult result = controller.submitQuiz(test, answers);
 
         frame.personalityResult = result;
-        frame.archetype = result.getResultType();
 
         frame.go_to("vibe");
 
