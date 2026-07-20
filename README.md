@@ -2,7 +2,7 @@
 
 A community matching app for Bilkent students. You pick your interests, take a short personality test, and the app shows you communities that actually fit you. You can join them, chat, post in the forum, and add friends.
 
-## tech stack
+## Tech stack
 
 - Java 21, Swing (desktop UI)
 - TCP socket client-server architecture (port 5050)
@@ -11,11 +11,11 @@ A community matching app for Bilkent students. You pick your interests, take a s
 - JavaMail + Gmail SMTP (email verification)
 - MVC architecture: model / service / server / screens layers separated
 
-## how it works
+## How it works
 
 There is a server and a client. The server runs on one machine and holds the database. Everyone else connects to it over the network. When something happens (a message, a friend request) it gets pushed to you live, no refresh needed.
 
-## running it
+## Running it
 
 Start the server first:
 ```
@@ -37,7 +37,7 @@ To find the server machine's ip, run this in the server's terminal:
 ipconfig getifaddr en0
 ```
 
-## demo accounts
+## Demo accounts
 
 The database seeds itself on first run. You can log in with any of these:
 
@@ -51,7 +51,7 @@ The database seeds itself on first run. You can log in with any of these:
 
 You can also sign up with your real Bilkent email. Only @ug.bilkent.edu.tr is accepted.
 
-## repo structure
+## Repo structure
 
 ```
 model/        data classes (User, Community, Message ...)
@@ -66,11 +66,11 @@ model_cs/     original model classes from the team assignment
 controller/   original controller classes from the team assignment
 ```
 
-## matching algorithm
+## Matching algorithm
 
 It looks at two things: how many of the community's tags overlap with your interests (65% weight) and how close your personality type is to the typical member's type (35%). The result shows up as a match percent on each community card.
 
-## notes
+## Notes
 
 - Data persists between runs. SQLite file: vibematch.db.
 - Verification email is optional. If SMTP is not set up the code prints to the server console instead.
