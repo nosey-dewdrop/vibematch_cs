@@ -12,13 +12,17 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.util.ArrayList;
 
+import controller.ProfileController;
+
 // screen 3 -- the chip picker. each JToggleButton is a "chip", selected ones get
 // saved into frame.my_tags. this is where model/Tag.java would eventually come in
 // (right now its just plain strings, not real Tag objects)
 public class InterestSelectionPanel extends JPanel {
 
     Frame frame;
+    ProfileController profileController = new ProfileController();
     ArrayList<JToggleButton> chips = new ArrayList<>();
+    
 
     String[] hobbies = {"chess", "hiking", "jazz", "board games", "animal welfare",
             "gaming", "anime", "football", "photography", "cooking", "coding",
@@ -70,18 +74,14 @@ public class InterestSelectionPanel extends JPanel {
     }
 
     public void save_tags(){
-        frame.my_tags.clear();
-        // goes over every chip and keeps the selected ones.
-        // relies on chips and hobbies being in the same order/same length, since
-        // it uses the loop index into both -- careful if you ever add/remove a hobby
         for (int i = 0; i < chips.size(); i++) {
+
             if (chips.get(i).isSelected()){
-                frame.my_tags.add(hobbies[i]);
+                profileController.addTag(frame.currentUser,hobbies[i]);
             }
         }
-        //System.out.println(frame.my_tags);
-        // no minimum , you can literally pick nothing and continue
-        frame.go_to("quiz");
+
+    frame.go_to("quiz");
     }
 
 }

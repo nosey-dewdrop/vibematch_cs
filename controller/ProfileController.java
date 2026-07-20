@@ -20,8 +20,14 @@ import java.util.List;
 public class ProfileController {
 
     public PersonalityResult submitQuiz(PersonalityTest test, List<String> answers){
-        // TODO: test.submitAnswers(answers); return test.calculateResult();
-        return null;
+        
+        // first save the answers
+        test.submitAnswers(answers);
+
+        // then calculate the personality
+        PersonalityResult result = test.calculateResult();
+
+        return result;
     }
 
     public void connectSpotify(SpotifyProfile profile, String authCode){
@@ -29,7 +35,10 @@ public class ProfileController {
     }
 
     public void addTag(User user, String tagName){
-        // TODO: make a new Tag(tagName), attach it to the user somehow
+
+        Tag tag = new Tag(tagName);
+
+        //user.addTag(tag);
     }
 
 }

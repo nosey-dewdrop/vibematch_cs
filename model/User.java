@@ -3,6 +3,8 @@ package model;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 /*
  * MODEL -- User
@@ -24,6 +26,7 @@ public class User {
     boolean isVerified;
     String displayName;
     String bio;
+    List<Tag> tags;
 
     // fields above are package-private on purpose (matches the UML), so
     // AuthController -- different package -- cant touch them directly. this
@@ -35,6 +38,7 @@ public class User {
         this.isVerified = false;
         this.displayName = "";
         this.bio = "";
+        this.tags = new ArrayList<>();
     }
 
     // constructor already set email + passwordHash, so all thats left for register()
@@ -84,6 +88,14 @@ public class User {
         return bio;
     }
 
+    public void addTag(Tag tag){
+        tags.add(tag);
+    }
+
+    public List<Tag> getTags(){
+        return tags;
+    }
+    
     // sha-256 cuz its just built into the jdk -- theres no pom.xml/build.gradle
     // in this project to pull in a real password hasher like bcrypt or argon2.
     // fine for a class project, would 100% need to change before this ever

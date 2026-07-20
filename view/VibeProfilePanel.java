@@ -90,20 +90,16 @@ public class VibeProfilePanel extends JPanel {
     }
 
     public void refresh(){
-        // this line does nothing (sets the text to whatever it already was), the
-        // real update is the line right after it. harmless, just leftover
-        archetypeLabel.setText(archetypeLabel.getText());
-        archetypeLabel.setText(frame.archetype);
+        archetypeLabel.setText(frame.personalityResult.getResultType());
 
-        // prefered way would be storing these with the archetype but this works
-        if (frame.archetype.equals("The Explorer")){
-            descLabel.setText("curious, always down for something new");
-        }else if (frame.archetype.equals("The Harmonizer")){
-            descLabel.setText("the glue of every friend group");
-        }else if (frame.archetype.equals("The Thinker")){
-            descLabel.setText("quiet on the outside, 100 tabs open on the inside");
-        }else if (frame.archetype.equals("The Spark")){
-            descLabel.setText("brings the energy wherever they go");
+        if (frame.personalityResult.getResultType().equals("The Explorer")){
+            descLabel.setText(frame.personalityResult.getDescription());
+        }else if (frame.personalityResult.getResultType().equals("The Harmonizer")){
+            descLabel.setText(frame.personalityResult.getDescription());
+        }else if (frame.personalityResult.getResultType().equals("The Thinker")){
+            descLabel.setText(frame.personalityResult.getDescription());
+        }else if (frame.personalityResult.getResultType().equals("The Spark")){
+            descLabel.setText(frame.personalityResult.getDescription());
         }else{
             descLabel.setText("");
         }

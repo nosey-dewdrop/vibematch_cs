@@ -4,16 +4,15 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.CardLayout;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 import controller.AuthController;
+import model.PersonalityResult;
 import model.User;
 //import java.awt.Color;
 
 // this is basically the whole app's brain right now -- holds the outer CardLayout,
 // makes every screen panel once in the constructor, and holds all the "session state"
-// (which communities exist, which ones you joined, your fake archetype etc) as plain
+// (which communities exist, which ones you joined, etc) as plain
 // fields since theres no real backend/database yet. once model/ actually gets
 // implemented, this state should probably move into a real model.User + friends
 // instead of living here, but for now this is where it all lives
@@ -24,10 +23,10 @@ public class Frame extends JFrame {
 
     ArrayList<Community> all_communities = new ArrayList<>();
     ArrayList<Community> my_communities = new ArrayList<>();
-    ArrayList<String> my_tags = new ArrayList<>();
     String user_email = "";
     String user_name = "student";
     String archetype = "???";
+    PersonalityResult personalityResult;
 
     // real auth now (see login_functionality.md) -- LoginSignupPanel and
     // EmailVerificationPanel actually call into this now instead of faking it
@@ -107,20 +106,6 @@ public class Frame extends JFrame {
         go_to("detail");
     }
 
-
-    public void pick_archetype(){
-        // TODO: this should use the real quiz answers later (RecommendationEngine stuff).
-        // once model/PersonalityTest.java + model/RecommendationEngine.java are actually
-        // implemented this whole method should basically go away
-        List<String> l = new ArrayList<>();
-        Collections.shuffle(l);
-        l.add("The Explorer");
-        l.add("The Harmonizer");
-        l.add("The Thinker");
-        l.add("The Spark");
-        Collections.shuffle(l); // had to shuffle again cuz it wasnt random ??
-        this.archetype = l.get(0);
-    }
 
 
     // hardcoded seed data so there's something to click through -- these are

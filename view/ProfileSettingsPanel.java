@@ -103,12 +103,12 @@ public class ProfileSettingsPanel extends JPanel {
         typeLabel.setText("Vibe type: " + frame.archetype);
         nameField.setText(frame.user_name);
 
-        if (frame.my_tags.size() == 0){
+        if (frame.currentUser.getTags().size() == 0){
             tagsLabel.setText("Tags: none yet");
         }else{
             String s = "Tags: ";
-            for (int i = 0; i < frame.my_tags.size(); i++) {
-                s = s + "#" + frame.my_tags.get(i) + " ";
+            for (int i = 0; i < frame.currentUser.getTags().size(); i++) {
+                s = s + "#" + frame.currentUser.getTags().get(i) + " ";
             }
             tagsLabel.setText(s);
         }
