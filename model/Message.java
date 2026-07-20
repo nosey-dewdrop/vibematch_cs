@@ -18,7 +18,7 @@ package model;
  * click-through prototype's chat screen, its a different, simpler class in a different
  * package on purpose. this one is the real Model class.
  *
- * status: SCAFFOLD ONLY.
+ * status: first pass. fields + send() done, moderation wired in.
  */
 public class Message {
 
@@ -28,9 +28,46 @@ public class Message {
     String timestamp; // report says "DateTime", using String for now to keep this dependency-free
     boolean isBlocked;
 
-    public void send(){
-        // TODO: create a ModerationFilter, run checkMessage(this) on it, set isBlocked
-        // accordingly, and only then let GroupChat store/broadcast this message
+    // gson needs a no-arg constructor to rebuild a Message off the wire, and the
+    // sender side needs a real one, so theres two. isBlocked starts false -- a
+    // message is innocent until the filter says otherwise
+    public Message(){
+    }
+
+    public Message(String messageId, String senderId, String content, String timestamp){
+        this.messageId = messageId;
+        this.senderId = senderId;
+        this.content = content;
+        this.timestamp = timestamp;
+        this.isBlocked = false;
+    }
+
+    // Table 3 says the Message "checks itself against the moderation filter before
+    // it can appear", so send() does its own check instead of waiting for GroupChat
+    // to do it. builds a filter, runs this message through it, and only leaves
+    // isBlocked false if it came back clean. returns whether it may appear so the
+    // caller (GroupChat.postMessage) knows if it can store/broadcast it
+    public boolean send(){
+        ModerationFilter filter = new ModerationFilter();
+        boolean clean = filter.checkMessage(this);
+        if (clean){
+            this.isBlocked = false;
+            return true;
+        }
+        filter.blockMessage(this);
+        return false;
+    }
+
+    public String getContent(){
+        return content;
+    }
+
+    public String getSenderId(){
+        return senderId;
+    }
+
+    public boolean isBlocked(){
+        return isBlocked;
     }
 
 }
