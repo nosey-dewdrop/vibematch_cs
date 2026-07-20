@@ -85,10 +85,19 @@ public class CommunityController {
     }
 
     // trending = most members, top N -- DiscoverPanel's right-hand list.
-    // sorts a copy so were not reordering allCommunities behind everyones back
+    // sorts a copy so were not reordering allCommunities behind everyones back,
+    // same bubble sort the panel itself uses for its trending list
     public List<Community> getTrending(int limit){
         List<Community> sorted = new ArrayList<>(allCommunities);
-        sorted.sort((a, b) -> Integer.compare(b.getMemberCount(), a.getMemberCount()));
+        for (int i = 0; i < sorted.size(); i++){
+            for (int j = 0; j < sorted.size() - 1; j++){
+                if (sorted.get(j).getMemberCount() < sorted.get(j + 1).getMemberCount()){
+                    Community temp = sorted.get(j);
+                    sorted.set(j, sorted.get(j + 1));
+                    sorted.set(j + 1, temp);
+                }
+            }
+        }
         while (sorted.size() > limit){
             sorted.remove(sorted.size() - 1);
         }
