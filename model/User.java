@@ -1,117 +1,69 @@
 package model;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 import java.util.ArrayList;
-import java.util.List;
 
 /*
- * MODEL -- User
- * owner: Ahmed Khalil Salim   (Table 5)
+ * A user of the app. Passwords are never stored in plain text, we keep the
+ * hash and the salt that was used (see util.PasswordUtil).
  *
- * "The verified student account and profile that everything else in the app
- * is built around." (4.1) -- basically every other class ends up pointing
- * back at this one somehow.
- *
- * status: this one's actually real now, not just scaffold -- see
- * login_functionality.md for the full writeup. still in-memory only tho, no
- * DB wired up yet, so restart the app and every account you made is just gone lol
+ * The interests list is filled in by the dao when we need it, it is not always
+ * loaded.
  */
 public class User {
 
-    String userId;
-    String email;
-    String passwordHash;
-    boolean isVerified;
-    String displayName;
-    String bio;
-    List<Tag> tags;
+    private String username;
+    private String displayName;
+    private String email;
+    private String passHash;
+    private String salt;
+    private String bio;
+    private boolean verified;
+    private String mbtiType;     // like "INFP", null until they take the test
+    private String createdAt;
 
-    // fields above are package-private on purpose (matches the UML), so
-    // AuthController -- different package -- cant touch them directly. this
-    // constructor is the only way in. hashes the password right away too, no
-    // reason to leave the plain text sitting around in a field even briefly
-    public User(String email, String password){
+    private ArrayList<String> interests = new ArrayList<String>();
+
+    public User() {
+    }
+
+    public User(String username, String displayName, String email) {
+        this.username = username;
+        this.displayName = displayName;
         this.email = email;
-        this.passwordHash = hash(password);
-        this.isVerified = false;
-        this.displayName = "";
-        this.bio = "";
-        this.tags = new ArrayList<>();
     }
 
-    // constructor already set email + passwordHash, so all thats left for register()
-    // to do is hand out an id. isVerified stays false here btw -- cant log in until
-    // VerificationService says the code checked out (see login() + verifyToken() below)
-    public void register(){
-        this.userId = UUID.randomUUID().toString();
-    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    // heads up, this one isnt actually hooked up to anything right now --
-    // AuthController.handleVerify() skips straight to VerificationService.verifyToken()
-    // instead (same package, can flip isVerified itself, no need to come through here).
-    // keeping this around anyway in case something needs to verify a User directly later
-    public boolean verifyEmail(String token){
-        if (token == null || token.isEmpty()){
-            return false;
-        }
-        this.isVerified = true;
-        return true;
-    }
+    public String getDisplayName() { return displayName; }
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
 
-    public boolean login(String email, String password){
-        return this.email.equals(email) && this.passwordHash.equals(hash(password));
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public void updateProfile(String bio){
-        this.bio = bio;
-    }
+    public String getPassHash() { return passHash; }
+    public void setPassHash(String passHash) { this.passHash = passHash; }
 
-    public String getEmail(){
-        return email;
-    }
+    public String getSalt() { return salt; }
+    public void setSalt(String salt) { this.salt = salt; }
 
-    public String getUserId(){
-        return userId;
-    }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 
-    public boolean isVerified(){
-        return isVerified;
-    }
+    public boolean isVerified() { return verified; }
+    public void setVerified(boolean verified) { this.verified = verified; }
 
-    public String getDisplayName(){
-        return displayName;
-    }
+    public String getMbtiType() { return mbtiType; }
+    public void setMbtiType(String mbtiType) { this.mbtiType = mbtiType; }
 
-    public String getBio(){
-        return bio;
-    }
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
-    public void addTag(Tag tag){
-        tags.add(tag);
-    }
+    public ArrayList<String> getInterests() { return interests; }
+    public void setInterests(ArrayList<String> interests) { this.interests = interests; }
 
-    public List<Tag> getTags(){
-        return tags;
+    // handy for the test, did they finish onboarding (picked interests + did mbti)
+    public boolean hasVibe() {
+        return mbtiType != null && !interests.isEmpty();
     }
-    
-    // sha-256 cuz its just built into the jdk -- theres no pom.xml/build.gradle
-    // in this project to pull in a real password hasher like bcrypt or argon2.
-    // fine for a class project, would 100% need to change before this ever
-    // touched a real student's real password
-    private static String hash(String password){
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = digest.digest(password.getBytes());
-            StringBuilder sb = new StringBuilder();
-            for (byte b : bytes){
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e){
-            throw new RuntimeException(e);
-        }
-    }
-
 }

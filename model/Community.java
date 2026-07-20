@@ -1,119 +1,65 @@
 package model;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.UUID;
 
 /*
- * MODEL -- Community
- * owner: Mete Kemal Coskuner   (Table 5)
- *
- * "An interest-based group, e.g., Jazz Lovers or Board Game Club." (4.3)
- * tracks its own members through addMember()/removeMember() and owns exactly
- * one GroupChat. UML: composes 1 GroupChat (filled diamond), many-to-many
- * association with User through membership, managed by Administrator.
- *
- * NOTE: there is ALSO a view.Community class (the GUI-only placeholder used by
- * the click-through prototype -- it has demo fields like match_percent that
- * arent part of the real design). Theyre in different packages on purpose so
- * they dont collide. This one here is the real Model class from the UML diagram.
- *
- * status: real now. the memberIds list is in-memory only, same deal as
- * AuthController.usersByEmail -- its standing in for the database until
- * that gets built, so restart the app and every membership is gone.
+ * A community / club people can join. The tags are interest tags we use to
+ * match communities to a users interests. memberCount and matchPercent are
+ * filled in when we show it on a screen, they are not columns in the table.
  */
 public class Community {
 
-    String communityId;
-    String name;
-    String description;
+    private int id;
+    private String name;
+    private String description;
+    private String category;
+    private String emoji;
+    private String coverColor;   // hex string, picked when seeding
+    private String createdBy;
+    private String createdAt;
 
-    // composition -- a GroupChat cant exist without its Community, which is
-    // exactly why its built right here in the constructor and theres no
-    // setGroupChat() anywhere. nobody hands us a chat from outside.
-    GroupChat groupChat;
+    private ArrayList<String> tags = new ArrayList<String>();
 
-    // went with ids instead of List<User> -- keeping whole User objects here
-    // would mean every Community drags around password hashes and bios it has
-    // no business holding. the id is all membership actually needs.
-    List<String> memberIds = new ArrayList<>();
+    private int memberCount;     // computed
+    private int matchPercent;    // computed by MatchService
+    private boolean member;      // is the current user a member (computed per request)
 
-    // NOT in the report's field list, but RecommendationEngine needs SOMETHING
-    // on the community side to match a student's Tags/genres against, otherwise
-    // calculateMatchScore() has literally nothing to compare. so a community
-    // carries its own interest tags ("jazz", "board games", ...) -- set by
-    // whoever creates it (Administrator.createCommunity() on Damla's side).
-    List<Tag> tags = new ArrayList<>();
-
-    public Community(String name, String description){
-        this.communityId = UUID.randomUUID().toString(); // same id scheme as User.register()
-        this.name = name;
-        this.description = description;
-        this.groupChat = new GroupChat();
-        // GroupChat's fields are package-private like everyone elses, so we can
-        // stamp our id straight onto it -- same trick VerificationService pulls
-        // when it flips user.isVerified
-        this.groupChat.chatId = UUID.randomUUID().toString();
-        this.groupChat.communityId = this.communityId;
+    public Community() {
     }
 
-    // returns boolean instead of void btw -- the report doesnt specify, but the
-    // view needs to know whether the join actually happened so the button can
-    // flip to "Joined" or not (see HomeFeedPanel's single-click join)
-    public boolean addMember(User user){
-        if (user == null || user.userId == null){
-            return false; // no account, or register() was never called -- nothing to store
-        }
-        if (memberIds.contains(user.userId)){
-            return false; // already in, dont count anyone twice
-        }
-        memberIds.add(user.userId);
-        return true;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public boolean removeMember(User user){
-        if (user == null || user.userId == null){
-            return false;
-        }
-        return memberIds.remove(user.userId);
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public boolean isMember(User user){
-        if (user == null || user.userId == null){
-            return false;
-        }
-        return memberIds.contains(user.userId);
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public int getMemberCount(){
-        return memberIds.size();
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public void addTag(Tag tag){
-        if (tag == null || tag.getName() == null || tag.getName().isEmpty()){
-            return;
-        }
-        tags.add(tag);
-    }
+    public String getEmoji() { return emoji; }
+    public void setEmoji(String emoji) { this.emoji = emoji; }
 
-    public String getCommunityId(){
-        return communityId;
-    }
+    public String getCoverColor() { return coverColor; }
+    public void setCoverColor(String coverColor) { this.coverColor = coverColor; }
 
-    public String getName(){
-        return name;
-    }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
-    public String getDescription(){
-        return description;
-    }
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
-    public GroupChat getGroupChat(){
-        return groupChat;
-    }
+    public ArrayList<String> getTags() { return tags; }
+    public void setTags(ArrayList<String> tags) { this.tags = tags; }
 
-    public List<Tag> getTags(){
-        return tags;
-    }
+    public int getMemberCount() { return memberCount; }
+    public void setMemberCount(int memberCount) { this.memberCount = memberCount; }
 
+    public int getMatchPercent() { return matchPercent; }
+    public void setMatchPercent(int matchPercent) { this.matchPercent = matchPercent; }
+
+    public boolean isMember() { return member; }
+    public void setMember(boolean member) { this.member = member; }
 }
