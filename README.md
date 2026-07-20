@@ -27,14 +27,14 @@ Then open the client in another terminal:
 ./run.sh
 ```
 
-If you are connecting from a different laptop on the same wifi:
-```
-./run.sh <server ip address>
-```
-
-To find the server machine's ip, run this in the server's terminal:
+If you are connecting from a different laptop on the same wifi, first find the server machine's ip by running this in the server's terminal:
 ```
 ipconfig getifaddr en0
+```
+
+It will print something like `192.168.1.45`. Then on the other laptop:
+```
+./run.sh 192.168.1.45
 ```
 
 ## Demo accounts
