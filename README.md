@@ -1,35 +1,35 @@
 # vibematch
 
-a community matching app for bilkent students. you pick your interests, take a short personality test, and the app shows you communities that actually fit you. you can join them, chat, post in the forum, and add friends.
+Bilkent öğrencileri için topluluk eşleştirme uygulaması. İlgi alanlarını seçiyorsun, kısa bir kişilik testi yapıyorsun, uygulama sana uyan toplulukları gösteriyor. Topluluklara katılabilir, sohbet edebilir, forum açabilir, arkadaş ekleyebilirsin.
 
-## how it works
+## nasıl çalışır?
 
-there's a server and a client. the server runs on one machine and holds the database. everyone else connects to it over the network. when something happens (a message, a friend request) it gets pushed to you live, you don't have to refresh anything.
+Bir sunucu ve bir istemci var. Sunucu tek makinede çalışır ve veritabanını tutar. Diğerleri ağ üzerinden bağlanır. Bir şey olduğunda (mesaj, arkadaşlık isteği) sana anında iletilir, yenileme gerekmez.
 
-## running it
+## çalıştırmak için
 
-start the server first:
+Önce sunucuyu başlat:
 ```
 ./run-server.sh
 ```
 
-then open the client in another terminal:
+Sonra başka bir terminalde istemciyi aç:
 ```
 ./run.sh
 ```
 
-if you're on a different laptop on the same wifi:
+Farklı bir laptoptan bağlanıyorsan:
 ```
-./run.sh <server machine's ip>
+./run.sh <sunucu makinenin ip adresi>
 ```
 
-to find the ip of the server machine: `ipconfig getifaddr en0`
+Sunucunun ip adresini öğrenmek için: `ipconfig getifaddr en0`
 
-## demo accounts
+## demo hesapları
 
-the database seeds itself on first run. you can log in with any of these:
+Veritabanı ilk çalıştırmada kendini oluşturur. Bu hesaplardan herhangiyle giriş yapabilirsin:
 
-| username | email | password |
+| kullanıcı adı | email | şifre |
 |---|---|---|
 | ada | ada@ug.bilkent.edu.tr | vibe1234 |
 | mert | mert@ug.bilkent.edu.tr | vibe1234 |
@@ -37,29 +37,29 @@ the database seeds itself on first run. you can log in with any of these:
 | can | can@ug.bilkent.edu.tr | vibe1234 |
 | elif | elif@ug.bilkent.edu.tr | vibe1234 |
 
-or sign up with your real bilkent email (it only accepts @ug.bilkent.edu.tr).
+Gerçek Bilkent mailiyle de kayıt olunabilir. Sadece @ug.bilkent.edu.tr kabul eder.
 
-## what's in the repo
+## repo yapısı
 
 ```
-model/        the data classes (User, Community, Message, ...)
-data/         database layer, sqlite
-server/       the tcp server, one thread per client
-net/          client side socket connection
-service/      matching algorithm, mbti scoring, auth
-screens/      all the ui screens
-protocol/     the json format requests use over the socket
-ui/           shared swing components and theme
-model_cs/     the original model classes from the team assignment
-controller/   the original controller classes from the team assignment
+model/        veri sınıfları (User, Community, Message ...)
+data/         veritabanı katmanı, sqlite
+server/       tcp sunucu, her istemci için ayrı thread
+net/          istemci tarafı soket bağlantısı
+service/      eşleştirme algoritması, mbti puanlama, auth
+screens/      tüm ekranlar
+protocol/     soket üzerindeki json formatı
+ui/           ortak swing bileşenleri ve tema
+model_cs/     ödev için yazılan orijinal model sınıfları
+controller/   ödev için yazılan orijinal controller sınıfları
 ```
 
-## the matching algorithm
+## eşleştirme algoritması
 
-it looks at two things: how many of the community's tags overlap with your interests (65% weight) and how close your personality type is to the typical member's type (35%). the score shows up as a match percent on each community card.
+İki şeye bakıyor. Topluluğun etiketleriyle ilgi alanlarının ne kadar örtüştüğü (yüzde 65 ağırlık) ve kişilik tipinin o topluluğun tipik üyesiyle ne kadar uyuştuğu (yüzde 35). Sonuç her kart üzerinde eşleşme yüzdesi olarak çıkıyor.
 
-## notes
+## notlar
 
-- accounts and data persist between runs (sqlite file: vibematch.db)
-- the verification email is optional, if smtp isn't set up the code prints to the server console
-- to connect from another machine the server and client need to be on the same network
+- Veriler çalıştırmalar arasında kalıcı. Sqlite dosyası: vibematch.db.
+- Doğrulama emaili isteğe bağlı. Smtp kurulu değilse kod sunucu konsoluna yazılır.
+- Farklı bir makineden bağlanmak için sunucu ve istemci aynı ağda olmalı.
