@@ -108,7 +108,7 @@ public class ProfileSettingsPanel extends JPanel {
         }else{
             String s = "Tags: ";
             for (int i = 0; i < frame.currentUser.getTags().size(); i++) {
-                s = s + "#" + frame.currentUser.getTags().get(i) + " ";
+                s = s + "#" + frame.currentUser.getTags().get(i).getName() + " ";
             }
             tagsLabel.setText(s);
         }

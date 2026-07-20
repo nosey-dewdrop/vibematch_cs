@@ -24,7 +24,6 @@ public class VibeProfilePanel extends JPanel {
     JProgressBar socialBar;
     JProgressBar creativityBar;
     JProgressBar chillBar;
-    Random rand = new Random();
 
     VibeProfilePanel(Frame frame){
         this.frame = frame;
@@ -104,11 +103,10 @@ public class VibeProfilePanel extends JPanel {
             descLabel.setText("");
         }
 
-        // fake trait values , the real ones come from the quiz later
-        energyBar.setValue(rand.nextInt(60) + 40);
-        socialBar.setValue(rand.nextInt(60) + 40);
-        creativityBar.setValue(rand.nextInt(60) + 40);
-        chillBar.setValue(rand.nextInt(60) + 40);
+        energyBar.setValue(frame.personalityResult.getEnergy());
+        socialBar.setValue(frame.personalityResult.getSocial());
+        creativityBar.setValue(frame.personalityResult.getCreativity());
+        chillBar.setValue(frame.personalityResult.getChill());
     }
 
 }

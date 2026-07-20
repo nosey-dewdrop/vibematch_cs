@@ -36,9 +36,13 @@ public class ProfileController {
 
     public void addTag(User user, String tagName){
 
-        Tag tag = new Tag(tagName);
+    if(user == null){
+        return;
+    }
 
-        //user.addTag(tag);
+    Tag tag = new Tag(tagName);
+    user.addTag(tag);
+
     }
 
 }

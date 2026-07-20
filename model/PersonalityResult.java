@@ -14,11 +14,20 @@ public class PersonalityResult {
 
     private String resultType;
     private String description;
+    private int energy;
+    private int social;
+    private int creativity;
+    private int chill;
 
-    public PersonalityResult(String resultType, String description){
+    public PersonalityResult(String resultType, String description, int energy, int social, int creativity,int chill){
 
         this.resultType = resultType;
         this.description = description;
+        this.energy = energy;
+        this.social = social;
+        this.creativity = creativity;
+        this.chill = chill;
+
 
     }
 
@@ -32,6 +41,21 @@ public class PersonalityResult {
 
         return description;
 
+    }
+    public int getEnergy(){
+        return energy;
+    }
+
+    public int getSocial(){
+        return social;
+    }
+
+    public int getCreativity(){
+        return creativity;
+    }
+
+    public int getChill(){
+        return chill;
     }
 
     public void setResultType(String resultType){

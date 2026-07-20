@@ -70,8 +70,12 @@ public class PersonalityTest {
 
             return new PersonalityResult(
                     "The Explorer",
-                    "Curious, outgoing and always excited to try something new."
-            );
+                    "Curious, outgoing and always excited to try something new.",
+                    95,
+                    90,
+                    75,
+                    60
+                );
 
         }
 
@@ -79,7 +83,11 @@ public class PersonalityTest {
 
             return new PersonalityResult(
                     "The Spark",
-                    "Energetic and optimistic. You enjoy bringing people together."
+                    "Energetic and optimistic. You enjoy bringing people together.",
+                    80,
+                    85,
+                65,
+                    70
             );
 
         }
@@ -88,7 +96,11 @@ public class PersonalityTest {
 
             return new PersonalityResult(
                     "The Harmonizer",
-                    "Balanced, supportive and easy to get along with."
+                    "Balanced, supportive and easy to get along with.",
+                    60,
+                    70,
+                75,
+                    90
             );
 
         }
@@ -97,7 +109,12 @@ public class PersonalityTest {
 
             return new PersonalityResult(
                     "The Thinker",
-                    "Thoughtful, analytical and happiest when solving interesting problems."
+                    "Thoughtful, analytical and happiest when solving interesting problems.",
+                    40,
+                    45,
+                95,
+                    80
+
             );
 
         }
