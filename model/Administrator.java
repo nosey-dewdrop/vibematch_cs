@@ -48,8 +48,10 @@ public class Administrator {
             Community c = communities.get(i);
             if (c.communityId != null && c.communityId.equals(communityId)){
                 communities.remove(i);
+                // dont increment -- the next element just slid into position i
+            } else {
+                i = i + 1;
             }
-            i = i + 1;
         }
     }
 
