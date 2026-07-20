@@ -31,9 +31,10 @@ public class Administrator {
     static List<Community> communities = new ArrayList<>();
 
     public Community createCommunity(String name, String description){
-        Community community = new Community();
-        community.name = name;
-        community.description = description;
+        // Mete's Community sets everything up (name, description, its own GroupChat)
+        // in the constructor now, so we just hand it the two args and let it build
+        // itself -- no more poking fields in from out here
+        Community community = new Community(name, description);
         communities.add(community);
         return community;
     }

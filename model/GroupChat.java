@@ -27,6 +27,13 @@ public class GroupChat {
 
     List<Message> messages = new ArrayList<>();
 
+    // Community builds its own chat with a plain new GroupChat() in its constructor
+    // (composition, the community owns the chat), so it needs a no-arg one -- it sets
+    // chatId/communityId itself right after since were the same package. the two-arg
+    // version stays for when you already know both ids up front
+    public GroupChat(){
+    }
+
     public GroupChat(String chatId, String communityId){
         this.chatId = chatId;
         this.communityId = communityId;
