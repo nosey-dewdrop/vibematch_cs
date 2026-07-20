@@ -16,6 +16,9 @@ import java.util.ArrayList;
  * ChatController calls GroupChat.postMessage(), and BEFORE the message is stored
  * or broadcast, GroupChat has to pass it to ModerationFilter first. so postMessage()
  * is not just "add to the list" -- the moderation check has to happen inside it.
+ *
+ * status: first pass. postMessage runs the check + stores. broadcast over the
+ * socket layer isnt here yet -- thats the net/ side (2.2 tools table), not mine.
  */
 public class GroupChat {
 
@@ -24,13 +27,23 @@ public class GroupChat {
 
     List<Message> messages = new ArrayList<>();
 
-    public void postMessage(Message message){
-        // TODO: this needs to run message through ModerationFilter.checkMessage() FIRST,
-        // per the sequence diagram in section 6.2 of the report. something like:
-        //   ModerationFilter filter = new ModerationFilter();
-        //   if (!filter.checkMessage(message)) { filter.blockMessage(message); return; }
-        //   messages.add(message);
-        //   ... then broadcast it over the socket layer (see 2.2 tools table, java.net sockets)
+    public GroupChat(String chatId, String communityId){
+        this.chatId = chatId;
+        this.communityId = communityId;
+    }
+
+    // section 6.2 sequence: the message gets moderated BEFORE its stored. i let
+    // Message.send() run the actual check (Table 3 says the message checks itself),
+    // and only add it to the history if send() came back true. a blocked message
+    // never makes it into the list, so getMessageHistory() stays clean by design.
+    // returns whether it went through, so the controller can tell the sender
+    public boolean postMessage(Message message){
+        boolean allowed = message.send();
+        if (allowed){
+            messages.add(message);
+            return true;
+        }
+        return false;
     }
 
     public List<Message> getMessageHistory(){
