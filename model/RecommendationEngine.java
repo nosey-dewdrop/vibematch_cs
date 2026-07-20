@@ -38,23 +38,18 @@ public class RecommendationEngine {
     // hands them in here -- once the DB layer is real this becomes a query
     List<Community> allCommunities = new ArrayList<>();
 
-    // heads up, this map shouldnt exist long-term. per the UML a User composes
-    // its PersonalityResult and aggregates its SpotifyProfile + Tags, but those
-    // fields just arent on Khalil's User class yet -- thats his/Yara's side of
-    // the fence and im not going to go edit their classes from my slice. so the
-    // engine keeps its own userId -> profile-bits map as a stand-in (same move
-    // as usersByEmail in AuthController standing in for the DB). whoever wires
-    // onboarding calls setUserProfile() after the quiz/tag screens, and once
-    // User grows the real fields this map gets deleted and calculateMatchScore()
-    // just reads straight off the user.
-    Map<String, UserProfileData> profilesByUserId = new HashMap<>();
-
-    // tiny package-private holder for the map above, not a UML class on purpose
-    static class UserProfileData {
-        PersonalityResult personalityResult;
-        SpotifyProfile spotifyProfile;
-        List<Tag> tags = new ArrayList<>();
-    }
+    // heads up, these three maps shouldnt exist long-term. per the UML a User
+    // composes its PersonalityResult and aggregates its SpotifyProfile + Tags,
+    // but those fields just arent on Khalil's User class yet -- thats his/Yara's
+    // side of the fence and im not going to go edit their classes from my slice.
+    // so the engine keeps its own userId -> profile-bits maps as a stand-in
+    // (same move as usersByEmail in AuthController standing in for the DB).
+    // whoever wires onboarding calls setUserProfile() after the quiz/tag
+    // screens, and once User grows the real fields these get deleted and
+    // calculateMatchScore() just reads straight off the user.
+    Map<String, PersonalityResult> resultsByUserId = new HashMap<>();
+    Map<String, SpotifyProfile> spotifyByUserId = new HashMap<>();
+    Map<String, List<Tag>> tagsByUserId = new HashMap<>();
 
     public void setCommunities(List<Community> communities){
         this.allCommunities = communities;
@@ -64,13 +59,11 @@ public class RecommendationEngine {
         if (user == null || user.userId == null){
             return;
         }
-        UserProfileData data = new UserProfileData();
-        data.personalityResult = result;
-        data.spotifyProfile = spotify;
+        resultsByUserId.put(user.userId, result);
+        spotifyByUserId.put(user.userId, spotify);
         if (tags != null){
-            data.tags = tags;
+            tagsByUserId.put(user.userId, tags);
         }
-        profilesByUserId.put(user.userId, data);
     }
 
     public List<Community> recommendCommunities(User user){
@@ -79,24 +72,30 @@ public class RecommendationEngine {
         // panel keeps its own bubble sort for now, this is the real ranking
         List<Community> ranked = new ArrayList<>(allCommunities);
 
-        // precompute so the sort comparator isnt re-scoring the same community
-        // over and over (n log n comparisons, only n scores needed)
+        // precompute so the sort below isnt re-scoring the same community over
+        // and over (only need to calculate each score once)
         Map<String, Double> scores = new HashMap<>();
         for (Community community : ranked){
             scores.put(community.communityId, calculateMatchScore(user, community));
         }
 
-        ranked.sort((a, b) -> Double.compare(scores.get(b.communityId), scores.get(a.communityId)));
+        // same bubble sort idea as HomeFeedPanel.sort_by_match_oder(), highest
+        // first -- keeps the whole project sorting the same way
+        for (int i = 0; i < ranked.size(); i++){
+            for (int j = 0; j < ranked.size() - 1; j++){
+                if (scores.get(ranked.get(j).communityId) < scores.get(ranked.get(j + 1).communityId)){
+                    Community temp = ranked.get(j);
+                    ranked.set(j, ranked.get(j + 1));
+                    ranked.set(j + 1, temp);
+                }
+            }
+        }
         return ranked;
     }
 
     public double calculateMatchScore(User user, Community community){
         if (user == null || user.userId == null || community == null){
             return 0.0;
-        }
-        UserProfileData data = profilesByUserId.get(user.userId);
-        if (data == null){
-            return 0.0; // onboarding never ran for this user, nothing to score with
         }
 
         double weightedSum = 0.0;
@@ -106,14 +105,15 @@ public class RecommendationEngine {
         // normalized by the users tag count, not the communitys -- being
         // interested in 2 of a big communitys 10 topics shouldnt read as 20%
         // if those 2 are literally everything i tagged myself with
-        if (data.tags != null && !data.tags.isEmpty()){
+        List<Tag> userTags = tagsByUserId.get(user.userId);
+        if (userTags != null && !userTags.isEmpty()){
             int shared = 0;
-            for (Tag userTag : data.tags){
+            for (Tag userTag : userTags){
                 if (communityHasTag(community, userTag.name)){
                     shared++;
                 }
             }
-            weightedSum += weightTags * ((double) shared / data.tags.size());
+            weightedSum += weightTags * ((double) shared / userTags.size());
             availableWeight += weightTags;
         }
 
@@ -123,8 +123,9 @@ public class RecommendationEngine {
         // archetype name as one of its tags (admin adds it at creation). cheap,
         // needs no extra class, and its all-or-nothing which is honest -- we
         // have no data to say a community "half suits" an Explorer
-        if (data.personalityResult != null && data.personalityResult.resultType != null){
-            if (communityHasTag(community, data.personalityResult.resultType)){
+        PersonalityResult result = resultsByUserId.get(user.userId);
+        if (result != null && result.resultType != null){
+            if (communityHasTag(community, result.resultType)){
                 weightedSum += weightPersonality;
             }
             availableWeight += weightPersonality;
@@ -133,8 +134,9 @@ public class RecommendationEngine {
         // --- spotify: genre overlap, but ONLY if actually connected (4.2 --
         // "optional add-on, not a requirement"). not connected means this whole
         // component stays out of availableWeight, see the class comment
-        if (data.spotifyProfile != null && data.spotifyProfile.isConnected){
-            List<String> genres = data.spotifyProfile.fetchTopGenres();
+        SpotifyProfile spotify = spotifyByUserId.get(user.userId);
+        if (spotify != null && spotify.isConnected){
+            List<String> genres = spotify.fetchTopGenres();
             if (genres != null && !genres.isEmpty()){
                 int shared = 0;
                 for (String genre : genres){
@@ -148,7 +150,7 @@ public class RecommendationEngine {
         }
 
         if (availableWeight == 0.0){
-            return 0.0; // profile exists but its empty -- true cold start, let them browse manually
+            return 0.0; // nothing to score with (onboarding never ran, or empty profile) -- true cold start, let them browse manually
         }
         return weightedSum / availableWeight;
     }
