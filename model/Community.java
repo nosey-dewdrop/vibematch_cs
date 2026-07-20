@@ -90,7 +90,7 @@ public class Community {
     }
 
     public void addTag(Tag tag){
-        if (tag == null || tag.name == null || tag.name.isEmpty()){
+        if (tag == null || tag.getName() == null || tag.getName().isEmpty()){
             return;
         }
         tags.add(tag);

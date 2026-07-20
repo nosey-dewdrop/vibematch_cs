@@ -109,7 +109,7 @@ public class RecommendationEngine {
         if (userTags != null && !userTags.isEmpty()){
             int shared = 0;
             for (Tag userTag : userTags){
-                if (communityHasTag(community, userTag.name)){
+                if (communityHasTag(community, userTag.getName())){
                     shared++;
                 }
             }
@@ -124,8 +124,8 @@ public class RecommendationEngine {
         // needs no extra class, and its all-or-nothing which is honest -- we
         // have no data to say a community "half suits" an Explorer
         PersonalityResult result = resultsByUserId.get(user.userId);
-        if (result != null && result.resultType != null){
-            if (communityHasTag(community, result.resultType)){
+        if (result != null && result.getResultType() != null){
+            if (communityHasTag(community, result.getResultType())){
                 weightedSum += weightPersonality;
             }
             availableWeight += weightPersonality;
@@ -167,7 +167,7 @@ public class RecommendationEngine {
         }
         String wanted = normalize(name);
         for (Tag tag : community.tags){
-            if (normalize(tag.name).equals(wanted)){
+            if (normalize(tag.getName()).equals(wanted)){
                 return true;
             }
         }
