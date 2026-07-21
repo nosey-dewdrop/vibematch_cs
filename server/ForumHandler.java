@@ -41,8 +41,16 @@ public class ForumHandler {
 
     public Response createPost(Request req, ClientHandler client) {
         int communityId = req.getInt("communityId");
+        String title = req.getString("title");
+        String body = req.getString("body");
+        if (title == null || title.trim().isEmpty()) {
+            return Response.fail(req.id, "Post needs a title.");
+        }
+        if (body == null || body.trim().isEmpty()) {
+            return Response.fail(req.id, "Post can't be empty.");
+        }
         Post p = new Post(communityId, client.getUsername(),
-                req.getString("title"), req.getString("body"));
+                title.trim(), body.trim());
         int newId = postDao.insertPost(p);
         p.setId(newId);
 
@@ -64,8 +72,12 @@ public class ForumHandler {
     public Response addComment(Request req, ClientHandler client) {
         int postId = req.getInt("postId");
         String author = client.getUsername();
+        String body = req.getString("body");
+        if (body == null || body.trim().isEmpty()) {
+            return Response.fail(req.id, "Comment can't be empty.");
+        }
         Comment c = new Comment(postId, author,
-                req.getString("body"), req.getInt("parentId"));
+                body.trim(), req.getInt("parentId"));
         int newId = postDao.insertComment(c);
         c.setId(newId);
 
@@ -80,6 +92,38 @@ public class ForumHandler {
             }
         }
         return Response.reply(req.id, Json.toJson(c));
+    }
+
+    public Response deletePost(Request req, ClientHandler client) {
+        int postId = req.getInt("postId");
+        Post post = postDao.findPost(postId);
+        if (post == null) {
+            return Response.fail(req.id, "Post not found.");
+        }
+        // only the author can delete their own post
+        if (!client.getUsername().equals(post.getAuthor())) {
+            return Response.fail(req.id, "You can only delete your own post.");
+        }
+        postDao.deletePost(postId);
+        pushForumUpdate(post.getCommunityId());
+        return Response.reply(req.id, "{\"ok\":true}");
+    }
+
+    public Response deleteComment(Request req, ClientHandler client) {
+        int commentId = req.getInt("commentId");
+        Comment c = postDao.findComment(commentId);
+        if (c == null) {
+            return Response.fail(req.id, "Comment not found.");
+        }
+        if (!client.getUsername().equals(c.getAuthor())) {
+            return Response.fail(req.id, "You can only delete your own comment.");
+        }
+        postDao.deleteComment(commentId);
+        Post post = postDao.findPost(c.getPostId());
+        if (post != null) {
+            pushForumUpdate(post.getCommunityId());
+        }
+        return Response.reply(req.id, "{\"ok\":true}");
     }
 
     // push a forumUpdate to every member of the community

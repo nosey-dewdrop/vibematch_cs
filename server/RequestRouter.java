@@ -2,6 +2,7 @@ package server;
 
 import com.google.gson.JsonObject;
 
+import data.Db;
 import protocol.Json;
 import protocol.Request;
 import protocol.Response;
@@ -38,13 +39,26 @@ public class RequestRouter {
             return Response.fail(request.id, "no action given");
         }
 
-        // connection check
+        // ping is a pure connection check, it never touches the db, so keep it
+        // out of the lock so a heartbeat can't be blocked behind a slow query.
         if (action.equals("ping")) {
             JsonObject data = new JsonObject();
             data.addProperty("message", "pong");
             return Response.reply(request.id, Json.toJson(data));
         }
 
+        // everything else may hit the single shared sqlite connection, which is
+        // not thread safe. serialize per request so two client threads never
+        // use the connection at the same moment.
+        Db.LOCK.lock();
+        try {
+            return route(action, request, client);
+        } finally {
+            Db.LOCK.unlock();
+        }
+    }
+
+    private Response route(String action, Request request, ClientHandler client) {
         // auth: the only actions allowed before this connection has logged in
         if (action.equals("register")) {
             return authHandler.register(request);
@@ -121,6 +135,12 @@ public class RequestRouter {
         }
         if (action.equals("forum.addComment")) {
             return forumHandler.addComment(request, client);
+        }
+        if (action.equals("forum.deletePost")) {
+            return forumHandler.deletePost(request, client);
+        }
+        if (action.equals("forum.deleteComment")) {
+            return forumHandler.deleteComment(request, client);
         }
 
         // friends

@@ -105,6 +105,16 @@ public class PostDetailPanel extends JPanel implements net.PushListener {
         JLabel by = UiHelper.muted("by " + post.getAuthor(), 12);
         by.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.add(by);
+
+        // the author can delete their own post (CRUD reverse)
+        if (user.getUsername().equals(post.getAuthor())) {
+            card.add(UiHelper.vgap(6));
+            card.add(deleteLink("Delete post", new Runnable() {
+                public void run() {
+                    deletePost();
+                }
+            }));
+        }
         card.add(UiHelper.vgap(12));
         JLabel bodyText = new JLabel("<html><div style='width:600px'>" + safe(post.getBody()) + "</div></html>");
         bodyText.setFont(Theme.body(14));
@@ -191,7 +201,26 @@ public class PostDetailPanel extends JPanel implements net.PushListener {
                 replyTo(cm);
             }
         });
-        row.add(reply);
+
+        // author can delete their own comment (CRUD reverse). lay Reply and
+        // Delete side by side so the row stays compact.
+        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 14, 0));
+        actions.setOpaque(false);
+        actions.setAlignmentX(Component.LEFT_ALIGNMENT);
+        actions.add(reply);
+        if (user.getUsername().equals(cm.getAuthor())) {
+            JLabel del = new JLabel("Delete");
+            del.setFont(Theme.bodyBold(11));
+            del.setForeground(new Color(0xC0, 0x4A, 0x4A));
+            del.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            del.addMouseListener(new MouseAdapter() {
+                public void mouseClicked(MouseEvent e) {
+                    deleteComment(cm);
+                }
+            });
+            actions.add(del);
+        }
+        row.add(actions);
 
         // indent replies under their parent
         JPanel wrap = new JPanel(new BorderLayout());
@@ -238,6 +267,51 @@ public class PostDetailPanel extends JPanel implements net.PushListener {
             api.addComment(post.getId(), user.getUsername(), text.trim(), parent.getId());
             main.openPost(post, community);
         }
+    }
+
+    private void deletePost() {
+        int ok = JOptionPane.showConfirmDialog(this,
+                "Delete this post and all its comments? This can't be undone.",
+                "Delete post", JOptionPane.YES_NO_OPTION);
+        if (ok != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            api.deletePost(post.getId());
+            main.openCommunity(community); // post is gone, go back to the forum
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+    }
+
+    private void deleteComment(Comment cm) {
+        int ok = JOptionPane.showConfirmDialog(this,
+                "Delete this comment? Any replies to it go too.",
+                "Delete comment", JOptionPane.YES_NO_OPTION);
+        if (ok != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            api.deleteComment(cm.getId());
+            main.openPost(post, community); // reload the thread
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+    }
+
+    // a small red clickable "delete" label
+    private JLabel deleteLink(String text, final Runnable onClick) {
+        JLabel link = new JLabel(text);
+        link.setFont(Theme.bodyBold(11));
+        link.setForeground(new Color(0xC0, 0x4A, 0x4A));
+        link.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        link.setAlignmentX(Component.LEFT_ALIGNMENT);
+        link.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                onClick.run();
+            }
+        });
+        return link;
     }
 
     // the server pushed a forum update. if it's for this community, reload so a

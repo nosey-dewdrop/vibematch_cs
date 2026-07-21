@@ -6,18 +6,25 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.locks.ReentrantLock;
 
 /*
  * Db is our little database layer. It opens one sqlite connection and makes
  * sure all the tables exist. The DAO classes (UserDao, CommunityDao, ...) use
  * getConnection() to run their queries.
  *
- * We keep a single connection because this is a single user desktop app, so we
- * dont really need a pool or anything fancy.
+ * There is a single shared connection, and the server is multi threaded (one
+ * thread per client). A JDBC Connection is not thread safe, so every unit of
+ * db work has to run under LOCK. The server takes the lock around each request
+ * (see RequestRouter) so two clients never touch the connection at once.
  */
 public class Db {
 
     private static Connection connection;
+
+    // serializes all access to the single shared connection. fair = true so
+    // no client's request gets starved when the server is busy.
+    public static final ReentrantLock LOCK = new ReentrantLock(true);
 
     // open the connection and build the schema. call this once at startup.
     public static void connect() {
@@ -41,7 +48,7 @@ public class Db {
         }
     }
 
-    public static Connection getConnection() {
+    public static synchronized Connection getConnection() {
         if (connection == null) {
             connect();
         }

@@ -68,6 +68,13 @@ public class FriendHandler {
         String requester = req.getString("requester");
         boolean accept = req.getInt("accept") == 1;
 
+        // only respond to a request that actually exists and is pending toward
+        // me. otherwise accept() would update zero rows but still fire a bogus
+        // "accepted" notification for a friendship that was never created.
+        if (!friendDao.relationFor(me, requester).equals("incoming")) {
+            return Response.fail(req.id, "No pending request from this user.");
+        }
+
         if (accept) {
             friendDao.accept(requester, me);
             pushTo(requester, "friendAccepted", me);

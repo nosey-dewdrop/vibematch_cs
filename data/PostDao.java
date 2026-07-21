@@ -159,6 +159,67 @@ public class PostDao {
         }
     }
 
+    // find a single comment (used to check who owns it before deleting)
+    public Comment findComment(int id) {
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement ps = c.prepareStatement("SELECT * FROM comments WHERE id = ?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            Comment cm = null;
+            if (rs.next()) {
+                cm = new Comment();
+                cm.setId(rs.getInt("id"));
+                cm.setPostId(rs.getInt("post_id"));
+                cm.setAuthor(rs.getString("author"));
+                cm.setBody(rs.getString("body"));
+                cm.setParentId(rs.getInt("parent_id"));
+                cm.setCreatedAt(rs.getString("created_at"));
+            }
+            rs.close();
+            ps.close();
+            return cm;
+        } catch (SQLException e) {
+            throw new RuntimeException("could not load comment", e);
+        }
+    }
+
+    // delete a post and all of its comments. there is no FK cascade so the
+    // comments have to go first.
+    public void deletePost(int postId) {
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement wipe = c.prepareStatement("DELETE FROM comments WHERE post_id = ?");
+            wipe.setInt(1, postId);
+            wipe.executeUpdate();
+            wipe.close();
+            PreparedStatement ps = c.prepareStatement("DELETE FROM posts WHERE id = ?");
+            ps.setInt(1, postId);
+            ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            throw new RuntimeException("could not delete post", e);
+        }
+    }
+
+    // delete a comment and any direct replies to it, so no orphaned replies
+    // are left pointing at a comment that no longer exists.
+    public void deleteComment(int commentId) {
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement kids = c.prepareStatement("DELETE FROM comments WHERE parent_id = ?");
+            kids.setInt(1, commentId);
+            kids.executeUpdate();
+            kids.close();
+            PreparedStatement ps = c.prepareStatement("DELETE FROM comments WHERE id = ?");
+            ps.setInt(1, commentId);
+            ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            throw new RuntimeException("could not delete comment", e);
+        }
+    }
+
     private Post readPost(ResultSet rs) throws SQLException {
         Post p = new Post();
         p.setId(rs.getInt("id"));

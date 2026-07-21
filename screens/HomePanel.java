@@ -110,7 +110,14 @@ public class HomePanel extends JPanel implements CommunityCard.Listener {
         body.add(sectionWrap);
         body.add(UiHelper.vgap(12));
 
-        body.add(buildCardGrid(top));
+        if (top == null || top.isEmpty()) {
+            JLabel empty = UiHelper.muted(
+                    "You've joined everything that fits so far. Head to Discover to browse all communities.", 13);
+            empty.setAlignmentX(Component.LEFT_ALIGNMENT);
+            body.add(leftRow(empty));
+        } else {
+            body.add(buildCardGrid(top));
+        }
         return body;
     }
 
@@ -140,7 +147,10 @@ public class HomePanel extends JPanel implements CommunityCard.Listener {
         hero.add(kicker);
         hero.add(UiHelper.vgap(4));
 
-        JLabel big = new JLabel(count + " communities fit your vibe 🌿");
+        String heroText = count > 0
+                ? count + " communities fit your vibe 🌿"
+                : "You're all caught up 🌿";
+        JLabel big = new JLabel(heroText);
         big.setFont(Theme.heading(20));
         big.setForeground(Color.WHITE);
         hero.add(big);

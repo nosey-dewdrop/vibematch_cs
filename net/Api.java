@@ -175,6 +175,14 @@ public class Api {
                 .put("body", body).put("parentId", parentId).json());
     }
 
+    public void deletePost(int postId) {
+        client.send("forum.deletePost", Params.of().put("postId", postId).json());
+    }
+
+    public void deleteComment(int commentId) {
+        client.send("forum.deleteComment", Params.of().put("commentId", commentId).json());
+    }
+
     // ---- notifications ----
 
     public ArrayList<model.Notification> notifications(String username) {

@@ -50,6 +50,13 @@ public class MessageHandler {
         String receiver = req.getString("receiver");
         String body = req.getString("body");
 
+        // a message needs actual text. null/blank would either hit the NOT NULL
+        // column and blow up, or send an empty bubble -- reject it cleanly.
+        if (body == null || body.trim().isEmpty()) {
+            return Response.fail(req.id, "Message can't be empty.");
+        }
+        body = body.trim();
+
         // privacy: you can only message people you are friends with
         if (!friendDao.areFriends(sender, receiver)) {
             return Response.fail(req.id, "You can only message your friends.");

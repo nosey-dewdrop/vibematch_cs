@@ -10,7 +10,8 @@ import protocol.Response;
 import service.AuthService;
 import util.EmailSender;
 
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * Handles the account actions coming over the socket: register, verify, login,
@@ -32,8 +33,10 @@ public class AuthHandler {
     private static final long CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
     private static final int MAX_ATTEMPTS = 5;
 
-    // codes we are waiting to be confirmed, keyed by username
-    private HashMap<String, PendingCode> pendingCodes = new HashMap<String, PendingCode>();
+    // codes we are waiting to be confirmed, keyed by username. one AuthHandler
+    // is shared across every client thread, so this map is touched concurrently
+    // -- use a concurrent map so registrations from two people don't corrupt it.
+    private Map<String, PendingCode> pendingCodes = new ConcurrentHashMap<String, PendingCode>();
 
     // a code together with when it dies and how many wrong tries it has left
     private static class PendingCode {

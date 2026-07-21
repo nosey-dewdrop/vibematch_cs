@@ -30,6 +30,14 @@ public class AppFrame extends JFrame {
 
     // put a screen into the window
     public void showScreen(JComponent screen) {
+        // if the screen we are leaving was the MainWindow it registered itself
+        // as a push listener -- detach it here so it doesn't leak and keep
+        // handling live updates after it's gone (e.g. on "retake vibe test").
+        for (java.awt.Component c : getContentPane().getComponents()) {
+            if (c instanceof MainWindow) {
+                ((MainWindow) c).detach();
+            }
+        }
         getContentPane().removeAll();
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(screen, BorderLayout.CENTER);
