@@ -164,8 +164,11 @@ public class LoginSignupPanel extends JPanel {
         }
 
         // the backend keys on a username; Khalil's form only has an email, so we
-        // derive the username from the email local-part (before the @).
-        String username = email.substring(0, email.indexOf('@'));
+        // derive the username from the email local-part (before the @). the
+        // backend only allows letters/numbers/underscore, so any other character
+        // (like the dot in "su.bilge") gets turned into an underscore.
+        String username = email.substring(0, email.indexOf('@'))
+                .replaceAll("[^a-zA-Z0-9_]", "_");
 
         if (signup_mode){
             String displayName = name_field.getText().trim().isEmpty()

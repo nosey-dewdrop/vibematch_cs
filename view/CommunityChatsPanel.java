@@ -33,6 +33,7 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
     JTextArea chatArea;
     JTextField inputField;
     JLabel chatTitle;
+    JTextField addFriendField;
     ArrayList<String> friends = new ArrayList<>();
     String open_chat = null; // the friend's username we're talking to
 
@@ -59,6 +60,28 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
             }
         });
         leftPanel.add(new JScrollPane(chatList), BorderLayout.CENTER);
+
+        // bottom of the left column: add a friend + see incoming requests
+        JPanel friendTools = new JPanel(new java.awt.GridLayout(3, 1, 0, 4));
+        friendTools.setBackground(new Color(245, 243, 250));
+        friendTools.setBorder(javax.swing.BorderFactory.createEmptyBorder(6, 6, 6, 6));
+
+        addFriendField = new JTextField();
+        addFriendField.setFont(new Font("Arial", Font.PLAIN, 13));
+        JButton addFriendBtn = new JButton("Add friend");
+        addFriendBtn.setFocusable(false);
+        addFriendBtn.addActionListener(e -> addFriend());
+        addFriendField.addActionListener(e -> addFriend()); // enter also sends
+
+        JButton requestsBtn = new JButton("Friend requests");
+        requestsBtn.setFocusable(false);
+        requestsBtn.addActionListener(e -> showRequests());
+
+        friendTools.add(addFriendField);
+        friendTools.add(addFriendBtn);
+        friendTools.add(requestsBtn);
+        leftPanel.add(friendTools, BorderLayout.SOUTH);
+
         add(leftPanel, BorderLayout.WEST);
 
         // right side -- the actual conversation
@@ -169,6 +192,52 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
         } catch (IllegalArgumentException ex){
             javax.swing.JOptionPane.showMessageDialog(this, ex.getMessage());
         }
+    }
+
+    // send a friend request to the username typed in the box
+    private void addFriend(){
+        String to = addFriendField.getText().trim();
+        if (to.isEmpty()){
+            return;
+        }
+        try {
+            // check the user exists first, so we can give a clear message
+            Api.get().findUser(to);
+            Api.get().sendFriendRequest(frame.username(), to);
+            addFriendField.setText("");
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Friend request sent to " + to + ".");
+        } catch (IllegalArgumentException ex){
+            javax.swing.JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+    }
+
+    // show incoming friend requests and let the user accept/decline each
+    private void showRequests(){
+        ArrayList<String> reqs;
+        try {
+            reqs = Api.get().friendRequests(frame.username());
+        } catch (IllegalArgumentException ex){
+            javax.swing.JOptionPane.showMessageDialog(this, ex.getMessage());
+            return;
+        }
+        if (reqs.isEmpty()){
+            javax.swing.JOptionPane.showMessageDialog(this, "No pending friend requests.");
+            return;
+        }
+        for (int i = 0; i < reqs.size(); i++) {
+            String from = reqs.get(i);
+            int choice = javax.swing.JOptionPane.showConfirmDialog(this,
+                from + " wants to be your friend. Accept?",
+                "Friend request", javax.swing.JOptionPane.YES_NO_OPTION);
+            try {
+                Api.get().respondToRequest(frame.username(), from,
+                        choice == javax.swing.JOptionPane.YES_OPTION);
+            } catch (IllegalArgumentException ex){
+                javax.swing.JOptionPane.showMessageDialog(this, ex.getMessage());
+            }
+        }
+        refresh(); // reload the friends list (newly accepted ones appear)
     }
 
     // a message pushed from the server -- if it's for the open conversation, reload
