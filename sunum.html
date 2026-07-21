@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeMatch — Sunum</title>
+<style>
+  :root{
+    --purple:#673ab7; --dark:#28233c; --bg:#f5f3fa; --ink:#28233c;
+    --muted:#6b6280; --green:#388e3c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;font-family:Arial,Helvetica,sans-serif;background:#111;}
+  .slide{
+    display:none; width:100vw; height:100vh; padding:6vh 8vw;
+    background:var(--bg); color:var(--ink);
+    flex-direction:column; justify-content:center;
+  }
+  .slide.active{display:flex;}
+  .slide h1{font-size:4vw;color:var(--purple);margin-bottom:2vh;}
+  .slide h2{font-size:2.6vw;color:var(--dark);margin-bottom:3vh;border-left:6px solid var(--purple);padding-left:1.2vw;}
+  .slide p, .slide li{font-size:1.6vw;line-height:1.6;color:var(--ink);margin-bottom:1.2vh;}
+  .slide li{margin-left:2.5vw;margin-bottom:1.6vh;}
+  .term{color:var(--purple);font-weight:bold;}
+  .muted{color:var(--muted);}
+  .big-center{align-items:center;text-align:center;}
+  .big-center h1{font-size:6vw;}
+  .big-center .sub{font-size:2vw;color:var(--muted);margin-top:2vh;}
+  .qa{background:#ece4f6;border-radius:14px;padding:2.5vh 2.5vw;margin-top:2vh;}
+  .qa .q{color:var(--purple);font-weight:bold;font-size:1.5vw;margin-bottom:1vh;}
+  .qa .a{font-size:1.4vw;color:var(--ink);}
+  .flow{font-family:monospace;font-size:1.5vw;line-height:2;color:var(--dark);
+        background:#fff;border:2px solid #dcd7eb;border-radius:12px;padding:3vh 3vw;margin-top:2vh;}
+  .badge{display:inline-block;background:var(--green);color:#fff;border-radius:8px;
+         padding:0.3vh 1vw;font-size:1.2vw;margin:0.4vh;}
+  .footer{position:fixed;bottom:2vh;right:3vw;color:var(--muted);font-size:1.1vw;}
+  .brand{position:fixed;top:2vh;left:3vw;color:var(--purple);font-weight:bold;font-size:1.4vw;}
+  .num{font-size:8vw;color:var(--purple);opacity:0.15;position:fixed;top:2vh;right:4vw;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<!-- 1: KAPAK -->
+<section class="slide active big-center">
+  <h1>VibeMatch</h1>
+  <p class="sub">Bilkent öğrencileri için topluluk eşleştirme uygulaması</p>
+  <p class="sub">Damla Su Bilge — Backend & Sistem Entegrasyonu</p>
+</section>
+
+<!-- 2: BENIM KISMIM -->
+<section class="slide">
+  <span class="num">1</span>
+  <h2>Benim işim: backend</h2>
+  <p>Ekip arayüzü hazırlamıştı, ama o arayüz sadece <span class="term">hafızada</span> çalışıyordu — uygulama kapanınca hesaplar, mesajlar siliniyordu.</p>
+  <p>Ben gerçek bir <span class="term">istemci-sunucu sistemi</span>, bir <span class="term">veritabanı</span> ve <span class="term">socket haberleşmesi</span> yazdım.</p>
+  <p>Sonra arayüzün her ekranını bu sisteme bağladım.</p>
+  <p style="margin-top:3vh;"><span class="badge">✓ İki kişi ayrı bilgisayardan aynı anda mesajlaşabiliyor</span> <span class="badge">✓ Veriler kalıcı</span></p>
+</section>
+
+<!-- 3: MIMARI -->
+<section class="slide">
+  <span class="num">2</span>
+  <h2>Mimari — Client-Server</h2>
+  <p>VibeMatch bir <span class="term">client-server</span> uygulaması. Tek bir sunucu çalışıyor, istemciler ona <span class="term">TCP socket</span> ile bağlanıyor.</p>
+  <p><b>Neden?</b> Çok kullanıcılı bir sistem — benim yazdığım mesajın karşı tarafa gitmesi lazım. Herkes kendi hafızasında çalışsaydı bu imkansızdı. Veriyi <span class="term">tek merkezde</span>, sunucuda tutuyoruz.</p>
+  <p><b>Sunucu açılışı:</b> <span class="term">ServerMain</span> sırayla → veritabanını açar → örnek veriyi yükler → 5050 portunda socket açıp dinlemeye başlar.</p>
+  <p><b>Kritik karar:</b> her istemciye ayrı bir <span class="term">thread</span> (thread-per-client) — herkes aynı anda, birbirini bekletmeden çalışıyor.</p>
+</section>
+
+<!-- 4: MIMARI QA -->
+<section class="slide">
+  <span class="num">2</span>
+  <h2>Mimari — hazır cevap</h2>
+  <div class="qa">
+    <div class="q">"Thread'ler aynı anda DB'ye yazınca race condition olmaz mı?"</div>
+    <div class="a">Oluyordu, çözdük. SQLite bağlantısı thread-safe değil, o yüzden tüm DB erişimini tek bir <span class="term">kilit (ReentrantLock)</span> ile sıraya soktuk. Her istek kilidi alıp bırakıyor.</div>
+    <div class="a" style="margin-top:1.5vh;"><b>Test:</b> 12 istemci × 80 işlem = 960 işlem, <span style="color:var(--green)">0 hata.</span></div>
+  </div>
+</section>
+
+<!-- 5: VERITABANI -->
+<section class="slide">
+  <span class="num">3</span>
+  <h2>Veritabanı — SQLite + DAO</h2>
+  <p>Verileri <span class="term">SQLite</span>'ta saklıyoruz — tek dosyalık, gömülü bir veritabanı (<span class="muted">vibematch.db</span>). Ayrı bir DB sunucusu kurmuyoruz.</p>
+  <p><b>11 tablo:</b> users, messages, communities, memberships, posts, comments, friendships, notifications, user_interests, spotify_profiles, community_tags.</p>
+  <p><b>DAO pattern:</b> her tablonun kendi sınıfı. <span class="term">UserDao</span> sadece users tablosuyla ilgilenir. SQL kodu ekranlara dağılmıyor, tek yerde toplanıyor.</p>
+</section>
+
+<!-- 6: GUVENLIK -->
+<section class="slide">
+  <span class="num">3</span>
+  <h2>Veritabanı — Güvenlik</h2>
+  <p>Şifreleri asla düz metin saklamıyoruz. Her kullanıcıya rastgele bir <span class="term">salt</span> üretip şifreyi <span class="term">PBKDF2</span> ile hash'liyoruz — yavaş, kırması zor. Veritabanı çalınsa bile şifreler okunamaz.</p>
+  <div class="qa">
+    <div class="q">"SQL injection'ı nasıl engelledin?"</div>
+    <div class="a">Tüm sorgular <span class="term">prepared statement</span>. Kullanıcının yazdığını SQL cümlesine yapıştırmıyoruz — yerine soru işareti koyup girdiyi ayrı gönderiyoruz. Kullanıcı komut yazsa bile veritabanı onu düz veri sayar, çalıştırmaz.</div>
+  </div>
+</section>
+
+<!-- 7: MESAJLASMA -->
+<section class="slide">
+  <span class="num">4</span>
+  <h2>Mesajlaşma + Canlı Bildirim</h2>
+  <p>Mesaj gönderilince önce iki kontrol: <span class="term">boş mu</span>, ve iki kişi <span class="term">arkadaş mı</span> — değilse reddediyoruz. Sonra <span class="term">messages</span> tablosuna kaydediyoruz.</p>
+  <p><b>Canlı kısım:</b> sunucu kimlerin çevrimiçi olduğunu bir listede tutuyor (<span class="term">online map</span>). Alıcı çevrimiçiyse mesajı beklemeden ona <span class="term">itiyoruz (push)</span>. Alıcının ekranındaki <span class="term">reader thread</span> bunu yakalayıp sohbeti kendiliğinden yeniliyor.</p>
+  <p class="muted">Polling değil push: sunucu olay olunca kendisi haber veriyor — anlık ve verimli.</p>
+</section>
+
+<!-- 8: ENTEGRASYON -->
+<section class="slide">
+  <span class="num">5</span>
+  <h2>Arayüzü Backend'e Bağlama</h2>
+  <p>13 ekranın her birini gerçek backend'e bağladım. Bunun için bir <span class="term">Api sınıfı</span> yazdım — 343 satır, 52 metot — ekran ile sunucu arasındaki köprü.</p>
+  <p><b>Köprülediğim uyumsuzluklar:</b></p>
+  <li>Arayüz email ile çalışıyordu, backend username istiyordu → email'den türettim</li>
+  <li>Kişilik testi 3 soruydu, backend 16 istiyor → gerçek 16 soruyla yeniden kurdum</li>
+  <li>Grup sohbeti varsayılmıştı, backend 1-1 mesajlaşma yapıyor → düzeni koruyup bağladım</li>
+  <p style="margin-top:1.5vh;"><b>Donma önleme:</b> tüm sunucu çağrılarını arka thread'e aldım (<span class="term">SwingWorker</span>).</p>
+</section>
+
+<!-- 9: ISTEK YOLCULUGU -->
+<section class="slide">
+  <span class="num">5</span>
+  <h2>Bir isteğin yolculuğu (login)</h2>
+  <div class="flow">
+    Ekran (view) &nbsp; → &nbsp; "api.login()" der<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    Api.java &nbsp; → &nbsp; JSON'a paketler<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    ServerClient &nbsp; → &nbsp; socket'ten yollar<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    Sunucu &nbsp; → &nbsp; işler, SQLite'a bakar, şifreyi doğrular<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    Api.java &nbsp; → &nbsp; gelen JSON'u User nesnesine çevirir<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    Ekran &nbsp; → &nbsp; temiz User nesnesi alır
+  </div>
+  <p class="muted" style="margin-top:2vh;">Ekran socket'i, JSON'u hiç görmüyor — sadece "api.login()" diyor.</p>
+</section>
+
+<!-- 10: DEMO -->
+<section class="slide">
+  <span class="num">6</span>
+  <h2>Canlı Demo</h2>
+  <li>Sunucuyu başlat → "listening on port 5050"</li>
+  <li>İki kullanıcı bağla → server "client connected" x2 gösterir</li>
+  <li>Kayıt ol → gerçek mail ile 6 haneli doğrulama kodu</li>
+  <li>İlgi seç → 16 soruluk kişilik testi → INFP</li>
+  <li>Chats → arkadaş ekle → öbür pencerede kabul et</li>
+  <li>Mesaj at → <b>anında</b> belirir + bildirim sayacı artar</li>
+  <li>Kapat-aç → veriler duruyor (kalıcılık)</li>
+</section>
+
+<!-- 11: KAPANIS -->
+<section class="slide big-center">
+  <h1>Teşekkürler</h1>
+  <p class="sub">14 sunucu sınıfı · 7 DAO · 11 tablo · Api: 343 satır / 52 metot</p>
+  <p class="sub">13 ekran backend'e bağlandı · 12 istemci eşzamanlılık testi: 0 hata</p>
+  <p class="sub" style="margin-top:3vh;color:var(--purple)"><b>Sorular?</b></p>
+</section>
+
+<div class="footer">← → ok tuşlarıyla geç · F ile tam ekran</div>
+<div class="brand">VibeMatch</div>
+
+<script>
+  let i = 0;
+  const slides = document.querySelectorAll('.slide');
+  function show(n){
+    slides[i].classList.remove('active');
+    i = (n + slides.length) % slides.length;
+    slides[i].classList.add('active');
+  }
+  document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight' || e.key === ' ') show(i+1);
+    if(e.key === 'ArrowLeft') show(i-1);
+    if(e.key === 'f' || e.key === 'F'){
+      if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+  document.addEventListener('click', ()=>show(i+1));
+</script>
+</body>
+</html>
