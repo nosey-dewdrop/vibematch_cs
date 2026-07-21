@@ -215,6 +215,9 @@ public class RequestRouter {
         if (action.equals("messages.findUser")) {
             return messageHandler.findUser(request);
         }
+        if (action.equals("messages.unread")) {
+            return messageHandler.unread(request, client);
+        }
 
         return Response.fail(request.id, "unknown action: " + action);
     }

@@ -16,6 +16,7 @@ public class Sidebar extends JPanel {
 
     Frame frame;
     JButton notifButton; // kept so we can put an unread count on it
+    JButton chatsButton; // kept so we can put an unread message count on it
 
     //main purple: new Color(103, 58, 183)
     //light bg: new Color(245, 243, 250)
@@ -49,7 +50,7 @@ public class Sidebar extends JPanel {
         mycomButton.setFocusable(false);
         mycomButton.addActionListener(e -> frame.go_to("mycom"));
 
-        JButton chatsButton = new JButton("Chats");
+        chatsButton = new JButton("Chats");
         chatsButton.setFocusable(false);
         chatsButton.addActionListener(e -> frame.go_to("chats"));
 
@@ -86,6 +87,15 @@ public class Sidebar extends JPanel {
             notifButton.setText("Notifications (" + count + ")");
         } else {
             notifButton.setText("Notifications");
+        }
+    }
+
+    // put the unread message count on the Chats button
+    public void setChatCount(int count){
+        if (count > 0){
+            chatsButton.setText("Chats (" + count + ")");
+        } else {
+            chatsButton.setText("Chats");
         }
     }
 

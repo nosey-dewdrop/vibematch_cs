@@ -82,6 +82,38 @@ public class UserDao {
         }
     }
 
+    // flexible lookup for "add friend": match a username, an email, OR a display
+    // name (case-insensitive), so people can add each other by the name they see
+    // rather than the exact stored username.
+    public User findByAny(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return null;
+        }
+        String q = query.trim();
+        String sql = "SELECT * FROM users WHERE username = ? OR email = ? "
+                   + "OR LOWER(display_name) = LOWER(?) LIMIT 1";
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql);
+            ps.setString(1, q);
+            ps.setString(2, q.toLowerCase());
+            ps.setString(3, q);
+            ResultSet rs = ps.executeQuery();
+            User u = null;
+            if (rs.next()) {
+                u = readRow(rs);
+            }
+            rs.close();
+            ps.close();
+            if (u != null) {
+                u.setInterests(getInterests(u.getUsername()));
+            }
+            return u;
+        } catch (SQLException e) {
+            throw new RuntimeException("could not search user", e);
+        }
+    }
+
     public boolean usernameExists(String username) {
         return findByUsername(username) != null;
     }

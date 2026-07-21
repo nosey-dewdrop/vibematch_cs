@@ -79,6 +79,42 @@ public class MessageDao {
         return partners;
     }
 
+    // how many messages this user has received but not yet read
+    public int unreadCount(String username) {
+        String sql = "SELECT COUNT(*) FROM messages WHERE receiver = ? AND is_read = 0";
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql);
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+            int n = 0;
+            if (rs.next()) {
+                n = rs.getInt(1);
+            }
+            rs.close();
+            ps.close();
+            return n;
+        } catch (SQLException e) {
+            throw new RuntimeException("could not count unread messages", e);
+        }
+    }
+
+    // mark every message from `other` to `me` as read (called when the user
+    // opens that conversation).
+    public void markRead(String me, String other) {
+        String sql = "UPDATE messages SET is_read = 1 WHERE receiver = ? AND sender = ?";
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql);
+            ps.setString(1, me);
+            ps.setString(2, other);
+            ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            throw new RuntimeException("could not mark messages read", e);
+        }
+    }
+
     private Message readRow(ResultSet rs) throws SQLException {
         Message m = new Message();
         m.setId(rs.getInt("id"));

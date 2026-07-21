@@ -126,7 +126,7 @@ public class Frame extends JFrame {
         go_to("detail");
     }
 
-    // refresh the unread count shown on the sidebar's Notifications button
+    // refresh the unread counts on the sidebar (notifications + chats)
     public void updateNotificationBadge(){
         if (currentUser == null){
             return;
@@ -134,6 +134,10 @@ public class Frame extends JFrame {
         try {
             int n = Api.get().unreadCount(currentUser.getUsername());
             shell.sidebar.setNotifCount(n);
+        } catch (Exception ignore) {}
+        try {
+            int m = Api.get().messageUnreadCount(currentUser.getUsername());
+            shell.sidebar.setChatCount(m);
         } catch (Exception ignore) {}
     }
 

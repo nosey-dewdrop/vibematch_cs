@@ -37,12 +37,24 @@ public class MessageHandler {
     }
 
     public Response conversation(Request req, ClientHandler client) {
-        ArrayList<Message> list = messageDao.getConversation(client.getUsername(), req.getString("other"));
+        String me = client.getUsername();
+        String other = req.getString("other");
+        ArrayList<Message> list = messageDao.getConversation(me, other);
+        // opening a conversation marks its incoming messages as read
+        messageDao.markRead(me, other);
         Message[] array = new Message[list.size()];
         for (int i = 0; i < list.size(); i++) {
             array[i] = list.get(i);
         }
         return Response.reply(req.id, Json.toJson(array));
+    }
+
+    // count of unread incoming messages, for the Chats badge
+    public Response unread(Request req, ClientHandler client) {
+        int n = messageDao.unreadCount(client.getUsername());
+        com.google.gson.JsonObject data = new com.google.gson.JsonObject();
+        data.addProperty("count", n);
+        return Response.reply(req.id, Json.toJson(data));
     }
 
     public Response send(Request req, ClientHandler client) {
@@ -77,9 +89,11 @@ public class MessageHandler {
 
     // used when starting a new chat, to check the username exists
     public Response findUser(Request req) {
-        User u = userDao.findByUsername(req.getString("username"));
+        // match by username, email or display name so people can be added by
+        // the name they show, not just their exact username.
+        User u = userDao.findByAny(req.getString("username"));
         if (u == null) {
-            return Response.fail(req.id, "No user with that username.");
+            return Response.fail(req.id, "No user found with that name.");
         }
         return Response.reply(req.id, Json.toJson(Dto.safeUser(u)));
     }

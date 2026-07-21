@@ -194,19 +194,25 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
         }
     }
 
-    // send a friend request to the username typed in the box
+    // send a friend request to whoever the typed name/email resolves to
     private void addFriend(){
-        String to = addFriendField.getText().trim();
-        if (to.isEmpty()){
+        String typed = addFriendField.getText().trim();
+        if (typed.isEmpty()){
             return;
         }
         try {
-            // check the user exists first, so we can give a clear message
-            Api.get().findUser(to);
-            Api.get().sendFriendRequest(frame.username(), to);
+            // resolve the typed name/email/username to the real account, then
+            // send the request to that account's actual username.
+            model.User target = Api.get().findUser(typed);
+            String realUsername = target.getUsername();
+            if (realUsername.equals(frame.username())){
+                javax.swing.JOptionPane.showMessageDialog(this, "You can't add yourself.");
+                return;
+            }
+            Api.get().sendFriendRequest(frame.username(), realUsername);
             addFriendField.setText("");
             javax.swing.JOptionPane.showMessageDialog(this,
-                "Friend request sent to " + to + ".");
+                "Friend request sent to " + target.getDisplayName() + ".");
         } catch (IllegalArgumentException ex){
             javax.swing.JOptionPane.showMessageDialog(this, ex.getMessage());
         }

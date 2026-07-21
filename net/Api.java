@@ -327,6 +327,12 @@ public class Api {
         return Json.fromJson(data, User.class);
     }
 
+    // unread direct-message count, for the Chats badge
+    public int messageUnreadCount(String username) {
+        String data = client.send("messages.unread", Params.of().put("username", username).json());
+        return Json.parse(data).get("count").getAsInt();
+    }
+
     // ---- helpers ----
 
     private ArrayList<String> stringList(String data) {
