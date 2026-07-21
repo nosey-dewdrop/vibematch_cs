@@ -93,6 +93,12 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
     }
 
     public void refresh(){
+        // always clear the open conversation so nothing from a previous account
+        // (or a previous friend) leaks in when this screen is re-shown.
+        open_chat = null;
+        chatArea.setText("");
+        chatTitle.setText("  pick a friend from the left");
+
         chatListModel.clear();
         try {
             friends = Api.get().friends(frame.username());
@@ -104,8 +110,6 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
         }
         if (friends.isEmpty()){
             chatTitle.setText("  add a friend to start chatting!");
-            chatArea.setText("");
-            open_chat = null;
         }
     }
 
@@ -149,9 +153,11 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
         if (!"newMessage".equals(event)){
             return;
         }
-        // reload the current conversation on the UI thread
+        // reload the current conversation on the UI thread -- only if someone is
+        // logged in and actually has a conversation open (guards stale pushes
+        // after logout, and avoids pointless reloads on other screens).
         javax.swing.SwingUtilities.invokeLater(() -> {
-            if (open_chat != null){
+            if (frame.currentUser != null && open_chat != null){
                 load_chat();
             }
         });

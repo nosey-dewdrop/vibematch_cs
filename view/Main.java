@@ -1,14 +1,13 @@
 package view;
 
-//import java.util.Random;
+import javax.swing.SwingUtilities;
 
-// entry point. this whole file is in the "view" layer per the MVC restructure --
-// its the launcher, it doesnt know anything about model/ or controller/ at all,
-// it literally just pops the main Frame open and thats it
+// entry point. builds the Frame on the Swing event thread (the right place to
+// touch UI). pass a server host to reach another machine: java view.Main 192.168.1.20
 public class Main {
-// main class , dont put logic here just runs the frame
     public static void main(String[] args) {
-        new Frame();
+        final String host = (args.length > 0 && args[0].trim().length() > 0)
+                ? args[0].trim() : "127.0.0.1";
+        SwingUtilities.invokeLater(() -> new Frame(host));
     }
-
 }

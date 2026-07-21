@@ -1,19 +1,23 @@
 package view;
 
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 
+import net.PushListener;
+import net.ServerClient;
+
 // this is the "logged in" part of the app -- sidebar on the left thats always
-// there, plus a SECOND CardLayout on the right for the 5 pages you can navigate
-// between (home/discover/detail/mycom/chats/profile). Frame's own CardLayout only
-// ever needs to know about "onboarding screens" vs "this whole shell", it doesnt
-// care which inner page is showing -- thats this class's job
-public class AppShellPanel extends JPanel {
+// there, plus a SECOND CardLayout on the right for the pages you navigate between
+// (home/discover/detail/mycom/chats/notifications/profile). It also listens for
+// server pushes so the sidebar's unread badge updates live.
+public class AppShellPanel extends JPanel implements PushListener {
 
     Frame frame;
     CardLayout inner_cards;
     JPanel content;
+    Sidebar sidebar;
 
     HomeFeedPanel home;
     DiscoverPanel discover;
@@ -21,12 +25,13 @@ public class AppShellPanel extends JPanel {
     MyCommunitiesEventsPanel mycom;
     CommunityChatsPanel chats;
     ProfileSettingsPanel profile;
+    NotificationsPanel notifications;
 
     AppShellPanel(Frame frame){
         this.frame = frame;
         setLayout(new BorderLayout());
 
-        Sidebar sidebar = new Sidebar(frame);
+        sidebar = new Sidebar(frame);
         add(sidebar, BorderLayout.WEST);
 
         inner_cards = new CardLayout();
@@ -38,6 +43,7 @@ public class AppShellPanel extends JPanel {
         mycom = new MyCommunitiesEventsPanel(frame);
         chats = new CommunityChatsPanel(frame);
         profile = new ProfileSettingsPanel(frame);
+        notifications = new NotificationsPanel(frame);
 
         content.add(home, "home");
         content.add(discover, "discover");
@@ -45,8 +51,18 @@ public class AppShellPanel extends JPanel {
         content.add(mycom, "mycom");
         content.add(chats, "chats");
         content.add(profile, "profile");
+        content.add(notifications, "notifications");
 
         add(content, BorderLayout.CENTER);
+
+        // listen for any server push so the notifications badge stays live
+        ServerClient.getInstance().addPushListener(this);
+    }
+
+    // any push (new message, friend request, friend accept) may have created a
+    // notification -- refresh the sidebar unread count.
+    public void onPush(String event, String dataJson){
+        SwingUtilities.invokeLater(() -> frame.updateNotificationBadge());
     }
 
     public void show_page(String name){
@@ -70,6 +86,9 @@ public class AppShellPanel extends JPanel {
         }
         if (name.equals("profile")){
             profile.refresh();
+        }
+        if (name.equals("notifications")){
+            notifications.refresh();
         }
         inner_cards.show(content, name);
     }

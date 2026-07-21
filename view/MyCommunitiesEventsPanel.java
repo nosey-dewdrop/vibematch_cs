@@ -75,13 +75,19 @@ public class MyCommunitiesEventsPanel extends JPanel {
         listPanel.removeAll();
 
         ArrayList<Community> joined;
+        String error = null;
         try {
             joined = Api.get().joined(frame.username());
         } catch (Exception ex){
             joined = new ArrayList<>();
+            error = ex.getMessage();
         }
 
-        if (joined.isEmpty()){
+        if (error != null){
+            JLabel err = new JLabel("couldn't load: " + error, SwingConstants.CENTER);
+            err.setForeground(new Color(180, 60, 60));
+            listPanel.add(err);
+        } else if (joined.isEmpty()){
             JLabel empty = new JLabel("you havent joined anything yet :(", SwingConstants.CENTER);
             empty.setForeground(Color.GRAY);
             listPanel.add(empty);

@@ -76,6 +76,12 @@ public class InterestSelectionPanel extends JPanel {
                 picked.add(hobbies[i]);
             }
         }
+        // need at least one, otherwise hasVibe() stays false and the user is sent
+        // back through onboarding on every login.
+        if (picked.isEmpty()){
+            javax.swing.JOptionPane.showMessageDialog(this, "Pick at least one interest to continue.");
+            return;
+        }
         try {
             net.Api.get().setInterests(frame.username(), picked);
         } catch (IllegalArgumentException ex){

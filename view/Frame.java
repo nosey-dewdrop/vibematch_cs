@@ -36,8 +36,12 @@ public class Frame extends JFrame {
     AdminPanel adminPanel;
 
     Frame(){
+        this("127.0.0.1");
+    }
+
+    Frame(String host){
         // connect to the server before anything touches the api
-        boolean connected = ServerClient.getInstance().connect("127.0.0.1", 5050);
+        boolean connected = ServerClient.getInstance().connect(host, 5050);
         if (!connected){
             javax.swing.JOptionPane.showMessageDialog(null,
                 "Couldn't reach the VibeMatch server.\nStart it first with:  ./run-server.sh");
@@ -113,12 +117,24 @@ public class Frame extends JFrame {
             // everything else lives inside the app shell (home, discover, ...)
             cards.show(root, "app");
             shell.show_page(name);
+            updateNotificationBadge(); // keep the unread count fresh on every page
         }
     }
 
     public void open_community(model.Community c){
         shell.detail.set_community(c);
         go_to("detail");
+    }
+
+    // refresh the unread count shown on the sidebar's Notifications button
+    public void updateNotificationBadge(){
+        if (currentUser == null){
+            return;
+        }
+        try {
+            int n = Api.get().unreadCount(currentUser.getUsername());
+            shell.sidebar.setNotifCount(n);
+        } catch (Exception ignore) {}
     }
 
     // log out: drop the server session and return to login

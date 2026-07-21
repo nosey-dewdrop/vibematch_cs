@@ -80,6 +80,9 @@ public class DiscoverPanel extends JPanel {
             all = Api.get().listCommunities(frame.username());
         } catch (Exception ex){
             all = new ArrayList<>();
+            JLabel err = new JLabel("Couldn't load communities: " + ex.getMessage());
+            err.setForeground(new Color(180, 60, 60));
+            shelvesPanel.add(err);
         }
 
         // collect the unique categories

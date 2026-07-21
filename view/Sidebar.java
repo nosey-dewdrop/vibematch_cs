@@ -15,6 +15,7 @@ import java.awt.Font;
 public class Sidebar extends JPanel {
 
     Frame frame;
+    JButton notifButton; // kept so we can put an unread count on it
 
     //main purple: new Color(103, 58, 183)
     //light bg: new Color(245, 243, 250)
@@ -52,6 +53,10 @@ public class Sidebar extends JPanel {
         chatsButton.setFocusable(false);
         chatsButton.addActionListener(e -> frame.go_to("chats"));
 
+        notifButton = new JButton("Notifications");
+        notifButton.setFocusable(false);
+        notifButton.addActionListener(e -> frame.go_to("notifications"));
+
         JButton profileButton = new JButton("Profile");
         profileButton.setFocusable(false);
         profileButton.addActionListener(e -> frame.go_to("profile"));
@@ -61,6 +66,7 @@ public class Sidebar extends JPanel {
         buttontPanel.add(discoverButton);
         buttontPanel.add(mycomButton);
         buttontPanel.add(chatsButton);
+        buttontPanel.add(notifButton);
         buttontPanel.add(profileButton);
 
         add(buttontPanel, BorderLayout.CENTER);
@@ -72,6 +78,15 @@ public class Sidebar extends JPanel {
         bottom.setBackground(new Color(40, 35, 60));
         bottom.add(logoutButton);
         add(bottom, BorderLayout.SOUTH);
+    }
+
+    // put the unread count on the Notifications button (or clear it at 0)
+    public void setNotifCount(int count){
+        if (count > 0){
+            notifButton.setText("Notifications (" + count + ")");
+        } else {
+            notifButton.setText("Notifications");
+        }
     }
 
 }

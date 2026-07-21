@@ -49,14 +49,21 @@ public class HomeFeedPanel extends JPanel {
         feedPanel.removeAll();
 
         ArrayList<Community> list;
+        String error = null;
         try {
             // server returns communities the user hasn't joined, ranked by match %
             list = Api.get().homeMatches(frame.username());
         } catch (Exception ex){
             list = new ArrayList<>();
+            error = ex.getMessage();
         }
 
-        if (list.isEmpty()){
+        if (error != null){
+            JLabel err = new JLabel("  Couldn't load your feed: " + error);
+            err.setForeground(new Color(180, 60, 60));
+            err.setFont(new Font("Arial", Font.PLAIN, 14));
+            feedPanel.add(err);
+        } else if (list.isEmpty()){
             JLabel empty = new JLabel("  You're all caught up! Check Discover for more.");
             empty.setForeground(Color.GRAY);
             empty.setFont(new Font("Arial", Font.PLAIN, 14));
