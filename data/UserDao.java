@@ -161,6 +161,42 @@ public class UserDao {
         }
     }
 
+    // add interests without wiping the existing ones (spotify genres fold in
+    // here). INSERT OR IGNORE so re-adding the same tag is a no-op, not a crash.
+    public void addInterests(String username, ArrayList<String> interests) {
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement ins = c.prepareStatement(
+                "INSERT OR IGNORE INTO user_interests (username, interest) VALUES (?, ?)");
+            for (int i = 0; i < interests.size(); i++) {
+                ins.setString(1, username);
+                ins.setString(2, interests.get(i));
+                ins.executeUpdate();
+            }
+            ins.close();
+        } catch (SQLException e) {
+            throw new RuntimeException("could not add interests", e);
+        }
+    }
+
+    // remove specific interests (used when spotify is disconnected, to strip
+    // the genres we added back out).
+    public void removeInterests(String username, ArrayList<String> interests) {
+        try {
+            Connection c = Db.getConnection();
+            PreparedStatement del = c.prepareStatement(
+                "DELETE FROM user_interests WHERE username = ? AND interest = ?");
+            for (int i = 0; i < interests.size(); i++) {
+                del.setString(1, username);
+                del.setString(2, interests.get(i));
+                del.executeUpdate();
+            }
+            del.close();
+        } catch (SQLException e) {
+            throw new RuntimeException("could not remove interests", e);
+        }
+    }
+
     // ---- helpers ----
 
     private void runUpdate(String sql, String value, String username) {

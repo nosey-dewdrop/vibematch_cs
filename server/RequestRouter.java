@@ -25,6 +25,7 @@ public class RequestRouter {
     private MessageHandler messageHandler;
     private FriendHandler friendHandler;
     private NotificationHandler notificationHandler = new NotificationHandler();
+    private SpotifyHandler spotifyHandler = new SpotifyHandler();
 
     public RequestRouter(ChatServer server) {
         this.server = server;
@@ -89,6 +90,17 @@ public class RequestRouter {
         }
         if (action.equals("getUser")) {
             return profileHandler.getUser(request);
+        }
+
+        // spotify (oauth runs on the client; the server just stores the taste)
+        if (action.equals("spotify.save")) {
+            return spotifyHandler.save(request, client);
+        }
+        if (action.equals("spotify.get")) {
+            return spotifyHandler.get(request, client);
+        }
+        if (action.equals("spotify.disconnect")) {
+            return spotifyHandler.disconnect(request, client);
         }
 
         // communities

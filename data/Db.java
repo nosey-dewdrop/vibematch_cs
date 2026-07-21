@@ -85,6 +85,20 @@ public class Db {
             ")"
         );
 
+        // a user's connected spotify account: their top artists (comma list for
+        // display) and top genres (which we also fold into their interests so the
+        // match algorithm can use their music taste). one row per user.
+        st.execute(
+            "CREATE TABLE IF NOT EXISTS spotify_profiles (" +
+            "  username TEXT PRIMARY KEY," +
+            "  display_name TEXT," +
+            "  top_artists TEXT," +
+            "  top_genres TEXT," +
+            "  connected_at TEXT NOT NULL," +
+            "  FOREIGN KEY (username) REFERENCES users(username)" +
+            ")"
+        );
+
         st.execute(
             "CREATE TABLE IF NOT EXISTS user_interests (" +
             "  username TEXT NOT NULL," +

@@ -91,6 +91,41 @@ public class Api {
         return Json.fromJson(data, User.class);
     }
 
+    // ---- spotify ----
+
+    private SpotifyAuth spotify = new SpotifyAuth();
+
+    public boolean spotifyAvailable() {
+        return SpotifyAuth.isConfigured();
+    }
+
+    /*
+     * Runs the spotify oauth flow on THIS machine (opens the browser, catches
+     * the redirect, reads the user's taste), then sends the result to the server
+     * to store and fold the genres into their interests. Returns the profile.
+     * Throws IllegalArgumentException with a friendly message on any failure.
+     */
+    public model.SpotifyProfile connectSpotify(String username) {
+        model.SpotifyProfile p = spotify.connect(username); // browser + spotify api
+        // hand the taste to the server to persist + merge into interests
+        String data = client.send("spotify.save", Params.of()
+                .put("username", username)
+                .put("displayName", p.getDisplayName() == null ? "" : p.getDisplayName())
+                .putList("artists", p.getTopArtists())
+                .putList("genres", p.getTopGenres())
+                .json());
+        return Json.fromJson(data, model.SpotifyProfile.class);
+    }
+
+    public model.SpotifyProfile getSpotify(String username) {
+        String data = client.send("spotify.get", Params.of().put("username", username).json());
+        return Json.fromJson(data, model.SpotifyProfile.class);
+    }
+
+    public void disconnectSpotify(String username) {
+        client.send("spotify.disconnect", Params.of().put("username", username).json());
+    }
+
     // ---- communities ----
 
     // username lets the server fill in the match percent for each community

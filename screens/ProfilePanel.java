@@ -53,6 +53,8 @@ public class ProfilePanel extends JPanel {
         col.add(UiHelper.vgap(16));
         col.add(buildStats());
         col.add(UiHelper.vgap(16));
+        col.add(buildSpotify());
+        col.add(UiHelper.vgap(16));
         col.add(buildButtons());
 
         add(col);
@@ -146,6 +148,141 @@ public class ProfilePanel extends JPanel {
         l.setAlignmentX(Component.CENTER_ALIGNMENT);
         tile.add(l);
         return tile;
+    }
+
+    // spotify card: connect button when off, taste + disconnect when on
+    private JPanel buildSpotify() {
+        RoundedPanel card = new RoundedPanel(16, Theme.WHITE);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
+        card.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
+
+        JLabel head = new JLabel("🎵  Spotify");
+        head.setFont(Theme.bodyBold(14));
+        head.setForeground(Theme.INK);
+        head.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.add(head);
+        card.add(UiHelper.vgap(8));
+
+        // build had never fetched -> ask the server once
+        model.SpotifyProfile sp = null;
+        try {
+            sp = api.getSpotify(user.getUsername());
+        } catch (Exception e) {
+            sp = null;
+        }
+
+        if (!api.spotifyAvailable()) {
+            JLabel off = UiHelper.muted("Spotify isn't set up on this build.", 12);
+            off.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.add(off);
+            return card;
+        }
+
+        if (sp != null && sp.isConnected()) {
+            String who = sp.getDisplayName() != null ? sp.getDisplayName() : "your account";
+            JLabel connected = UiHelper.muted("Connected as " + who, 12);
+            connected.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.add(connected);
+            card.add(UiHelper.vgap(8));
+
+            ArrayList<String> artists = sp.getTopArtists();
+            if (artists != null && !artists.isEmpty()) {
+                JLabel top = new JLabel("Top artists");
+                top.setFont(Theme.bodyBold(12));
+                top.setForeground(Theme.LILAC_700);
+                top.setAlignmentX(Component.LEFT_ALIGNMENT);
+                card.add(top);
+                card.add(UiHelper.vgap(4));
+                int show = Math.min(5, artists.size());
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < show; i++) {
+                    if (i > 0) sb.append(" · ");
+                    sb.append(artists.get(i));
+                }
+                JLabel list = new JLabel("<html><div style='width:340px'>" + sb + "</div></html>");
+                list.setFont(Theme.body(12));
+                list.setForeground(Theme.INK);
+                list.setAlignmentX(Component.LEFT_ALIGNMENT);
+                card.add(list);
+                card.add(UiHelper.vgap(10));
+            }
+
+            RoundedButton disc = new RoundedButton("Disconnect Spotify", Theme.LILAC_100, Theme.LILAC_700);
+            disc.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+            disc.setAlignmentX(Component.LEFT_ALIGNMENT);
+            disc.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    disconnectSpotify();
+                }
+            });
+            card.add(disc);
+        } else {
+            JLabel pitch = UiHelper.muted("Connect Spotify to match on your music taste.", 12);
+            pitch.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.add(pitch);
+            card.add(UiHelper.vgap(10));
+
+            RoundedButton conn = new RoundedButton("Connect Spotify", new Color(0x1D, 0xB9, 0x54), Color.WHITE);
+            conn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+            conn.setAlignmentX(Component.LEFT_ALIGNMENT);
+            conn.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    connectSpotify();
+                }
+            });
+            card.add(conn);
+        }
+        return card;
+    }
+
+    private void connectSpotify() {
+        // the oauth flow blocks (browser + network), so run it off the EDT and
+        // show a little wait dialog, then refresh the profile.
+        final javax.swing.JDialog wait = new javax.swing.JDialog(
+                SwingUtilities.getWindowAncestor(this), "Connecting Spotify");
+        JLabel msg = new JLabel("  Approve in your browser, then come back…  ");
+        msg.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        wait.add(msg);
+        wait.pack();
+        wait.setLocationRelativeTo(this);
+        wait.setModal(false);
+
+        new Thread(new Runnable() {
+            public void run() {
+                final String[] err = {null};
+                try {
+                    api.connectSpotify(user.getUsername());
+                } catch (Exception ex) {
+                    err[0] = ex.getMessage();
+                }
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        wait.dispose();
+                        if (err[0] != null) {
+                            javax.swing.JOptionPane.showMessageDialog(ProfilePanel.this, err[0]);
+                        }
+                        // refresh: interests may have changed too
+                        try {
+                            user.setInterests(api.getUser(user.getUsername()).getInterests());
+                        } catch (Exception ignore) {}
+                        main.showProfile();
+                    }
+                });
+            }
+        }).start();
+        wait.setVisible(true);
+    }
+
+    private void disconnectSpotify() {
+        try {
+            api.disconnectSpotify(user.getUsername());
+            user.setInterests(api.getUser(user.getUsername()).getInterests());
+        } catch (Exception ex) {
+            javax.swing.JOptionPane.showMessageDialog(this, ex.getMessage());
+        }
+        main.showProfile();
     }
 
     private JPanel buildButtons() {
