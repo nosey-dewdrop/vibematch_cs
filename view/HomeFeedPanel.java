@@ -47,35 +47,44 @@ public class HomeFeedPanel extends JPanel {
 
     public void refresh(){
         feedPanel.removeAll();
-
-        ArrayList<Community> list;
-        String error = null;
-        try {
-            // server returns communities the user hasn't joined, ranked by match %
-            list = Api.get().homeMatches(frame.username());
-        } catch (Exception ex){
-            list = new ArrayList<>();
-            error = ex.getMessage();
-        }
-
-        if (error != null){
-            JLabel err = new JLabel("  Couldn't load your feed: " + error);
-            err.setForeground(new Color(180, 60, 60));
-            err.setFont(new Font("Arial", Font.PLAIN, 14));
-            feedPanel.add(err);
-        } else if (list.isEmpty()){
-            JLabel empty = new JLabel("  You're all caught up! Check Discover for more.");
-            empty.setForeground(Color.GRAY);
-            empty.setFont(new Font("Arial", Font.PLAIN, 14));
-            feedPanel.add(empty);
-        } else {
-            for (int i = 0; i < list.size(); i++) {
-                feedPanel.add(make_card(list.get(i)));
-            }
-        }
-
+        JLabel loading = new JLabel("  loading...");
+        loading.setForeground(Color.GRAY);
+        loading.setFont(new Font("Arial", Font.PLAIN, 14));
+        feedPanel.add(loading);
         feedPanel.revalidate();
         feedPanel.repaint();
+
+        // the server call runs off the UI thread so the window never freezes
+        final String username = frame.username();
+        new ui.BackgroundTask<ArrayList<Community>>() {
+            protected ArrayList<Community> work(){
+                return Api.get().homeMatches(username);
+            }
+            protected void done(ArrayList<Community> list){
+                feedPanel.removeAll();
+                if (list.isEmpty()){
+                    JLabel empty = new JLabel("  You're all caught up! Check Discover for more.");
+                    empty.setForeground(Color.GRAY);
+                    empty.setFont(new Font("Arial", Font.PLAIN, 14));
+                    feedPanel.add(empty);
+                } else {
+                    for (int i = 0; i < list.size(); i++) {
+                        feedPanel.add(make_card(list.get(i)));
+                    }
+                }
+                feedPanel.revalidate();
+                feedPanel.repaint();
+            }
+            protected void failed(Exception e){
+                feedPanel.removeAll();
+                JLabel err = new JLabel("  Couldn't load your feed: " + e.getMessage());
+                err.setForeground(new Color(180, 60, 60));
+                err.setFont(new Font("Arial", Font.PLAIN, 14));
+                feedPanel.add(err);
+                feedPanel.revalidate();
+                feedPanel.repaint();
+            }
+        }.start();
     }
 
     public JPanel make_card(final Community c){

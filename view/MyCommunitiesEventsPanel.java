@@ -71,60 +71,78 @@ public class MyCommunitiesEventsPanel extends JPanel {
         add(split, BorderLayout.CENTER);
     }
 
+    // holds everything the background thread gathered, so done() only touches UI
+    private static class Loaded {
+        ArrayList<Community> joined;
+        ArrayList<String> postLines = new ArrayList<>();
+    }
+
     public void refresh(){
         listPanel.removeAll();
-
-        ArrayList<Community> joined;
-        String error = null;
-        try {
-            joined = Api.get().joined(frame.username());
-        } catch (Exception ex){
-            joined = new ArrayList<>();
-            error = ex.getMessage();
-        }
-
-        if (error != null){
-            JLabel err = new JLabel("couldn't load: " + error, SwingConstants.CENTER);
-            err.setForeground(new Color(180, 60, 60));
-            listPanel.add(err);
-        } else if (joined.isEmpty()){
-            JLabel empty = new JLabel("you havent joined anything yet :(", SwingConstants.CENTER);
-            empty.setForeground(Color.GRAY);
-            listPanel.add(empty);
-        }
-
-        for (int i = 0; i < joined.size(); i++) {
-            final Community c = joined.get(i);
-            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            row.setBackground(Color.WHITE);
-            JLabel name = new JLabel(c.getName() + "  (" + c.getMemberCount() + " members)");
-            name.setPreferredSize(new Dimension(250, 25));
-            JButton viewButton = new JButton("view");
-            viewButton.setFocusable(false);
-            viewButton.addActionListener(e -> frame.open_community(c));
-            row.add(name);
-            row.add(viewButton);
-            listPanel.add(row);
-        }
-
-        // recent posts across every joined community
         eventsModel.clear();
-        for (int i = 0; i < joined.size(); i++) {
-            try {
-                ArrayList<Post> posts = Api.get().posts(joined.get(i).getId());
-                for (int j = 0; j < posts.size(); j++) {
-                    eventsModel.addElement("[" + joined.get(i).getName() + "] " + posts.get(j).getTitle());
-                }
-            } catch (Exception ex){
-                // skip a community that fails to load
-            }
-        }
-        if (eventsModel.size() == 0){
-            eventsModel.addElement("no posts yet , join some communities first!");
-        }
-
+        JLabel loading = new JLabel("loading...", SwingConstants.CENTER);
+        loading.setForeground(Color.GRAY);
+        listPanel.add(loading);
         listPanel.revalidate();
         listPanel.repaint();
+
+        final String username = frame.username();
+        new ui.BackgroundTask<Loaded>() {
+            protected Loaded work(){
+                // all the server round-trips happen here, off the UI thread
+                Loaded d = new Loaded();
+                d.joined = Api.get().joined(username);
+                for (int i = 0; i < d.joined.size(); i++) {
+                    try {
+                        ArrayList<Post> posts = Api.get().posts(d.joined.get(i).getId());
+                        for (int j = 0; j < posts.size(); j++) {
+                            d.postLines.add("[" + d.joined.get(i).getName() + "] " + posts.get(j).getTitle());
+                        }
+                    } catch (Exception ex){
+                        // skip a community that fails to load
+                    }
+                }
+                return d;
+            }
+            protected void done(Loaded d){
+                listPanel.removeAll();
+                if (d.joined.isEmpty()){
+                    JLabel empty = new JLabel("you havent joined anything yet :(", SwingConstants.CENTER);
+                    empty.setForeground(Color.GRAY);
+                    listPanel.add(empty);
+                }
+                for (int i = 0; i < d.joined.size(); i++) {
+                    final Community c = d.joined.get(i);
+                    JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
+                    row.setBackground(Color.WHITE);
+                    JLabel name = new JLabel(c.getName() + "  (" + c.getMemberCount() + " members)");
+                    name.setPreferredSize(new Dimension(250, 25));
+                    JButton viewButton = new JButton("view");
+                    viewButton.setFocusable(false);
+                    viewButton.addActionListener(e -> frame.open_community(c));
+                    row.add(name);
+                    row.add(viewButton);
+                    listPanel.add(row);
+                }
+                eventsModel.clear();
+                for (int i = 0; i < d.postLines.size(); i++) {
+                    eventsModel.addElement(d.postLines.get(i));
+                }
+                if (eventsModel.size() == 0){
+                    eventsModel.addElement("no posts yet , join some communities first!");
+                }
+                listPanel.revalidate();
+                listPanel.repaint();
+            }
+            protected void failed(Exception e){
+                listPanel.removeAll();
+                JLabel err = new JLabel("couldn't load: " + e.getMessage(), SwingConstants.CENTER);
+                err.setForeground(new Color(180, 60, 60));
+                listPanel.add(err);
+                listPanel.revalidate();
+                listPanel.repaint();
+            }
+        }.start();
     }
 
 }

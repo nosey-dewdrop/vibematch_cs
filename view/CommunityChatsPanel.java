@@ -100,35 +100,58 @@ public class CommunityChatsPanel extends JPanel implements PushListener {
         chatTitle.setText("  pick a friend from the left");
 
         chatListModel.clear();
-        try {
-            friends = Api.get().friends(frame.username());
-        } catch (Exception ex){
-            friends = new ArrayList<>();
-        }
-        for (int i = 0; i < friends.size(); i++) {
-            chatListModel.addElement(friends.get(i));
-        }
-        if (friends.isEmpty()){
-            chatTitle.setText("  add a friend to start chatting!");
-        }
+        final String username = frame.username();
+        new ui.BackgroundTask<ArrayList<String>>() {
+            protected ArrayList<String> work(){
+                return Api.get().friends(username);
+            }
+            protected void done(ArrayList<String> result){
+                friends = result;
+                chatListModel.clear();
+                for (int i = 0; i < friends.size(); i++) {
+                    chatListModel.addElement(friends.get(i));
+                }
+                if (friends.isEmpty()){
+                    chatTitle.setText("  add a friend to start chatting!");
+                }
+            }
+            protected void failed(Exception e){
+                friends = new ArrayList<>();
+            }
+        }.start();
     }
 
     public void load_chat(){
         if (open_chat == null){
             return;
         }
-        chatTitle.setText("  " + open_chat);
-        chatArea.setText("");
-        try {
-            ArrayList<Message> msgs = Api.get().conversation(frame.username(), open_chat);
-            for (int i = 0; i < msgs.size(); i++) {
-                Message m = msgs.get(i);
-                chatArea.append(m.getSender() + "\n");
-                chatArea.append("    " + m.getBody() + "\n\n");
+        final String other = open_chat;
+        final String me = frame.username();
+        chatTitle.setText("  " + other);
+        chatArea.setText("loading...");
+        // fetch the conversation off the UI thread so the window never freezes
+        new ui.BackgroundTask<ArrayList<Message>>() {
+            protected ArrayList<Message> work(){
+                return Api.get().conversation(me, other);
             }
-        } catch (Exception ex){
-            chatArea.setText("couldn't load the conversation");
-        }
+            protected void done(ArrayList<Message> msgs){
+                // if the user switched to a different friend meanwhile, ignore
+                if (!other.equals(open_chat)){
+                    return;
+                }
+                chatArea.setText("");
+                for (int i = 0; i < msgs.size(); i++) {
+                    Message m = msgs.get(i);
+                    chatArea.append(m.getSender() + "\n");
+                    chatArea.append("    " + m.getBody() + "\n\n");
+                }
+            }
+            protected void failed(Exception e){
+                if (other.equals(open_chat)){
+                    chatArea.setText("couldn't load the conversation");
+                }
+            }
+        }.start();
     }
 
     public void send_message(){

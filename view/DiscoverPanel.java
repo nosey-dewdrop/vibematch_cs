@@ -74,16 +74,34 @@ public class DiscoverPanel extends JPanel {
 
     public void refresh(){
         shelvesPanel.removeAll();
+        JLabel loading = new JLabel("loading...");
+        loading.setForeground(Color.GRAY);
+        shelvesPanel.add(loading);
+        shelvesPanel.revalidate();
+        shelvesPanel.repaint();
 
-        ArrayList<Community> all;
-        try {
-            all = Api.get().listCommunities(frame.username());
-        } catch (Exception ex){
-            all = new ArrayList<>();
-            JLabel err = new JLabel("Couldn't load communities: " + ex.getMessage());
-            err.setForeground(new Color(180, 60, 60));
-            shelvesPanel.add(err);
-        }
+        // fetch off the UI thread, build the shelves when it comes back
+        final String username = frame.username();
+        new ui.BackgroundTask<ArrayList<Community>>() {
+            protected ArrayList<Community> work(){
+                return Api.get().listCommunities(username);
+            }
+            protected void done(ArrayList<Community> all){
+                buildFrom(all);
+            }
+            protected void failed(Exception e){
+                shelvesPanel.removeAll();
+                JLabel err = new JLabel("Couldn't load communities: " + e.getMessage());
+                err.setForeground(new Color(180, 60, 60));
+                shelvesPanel.add(err);
+                shelvesPanel.revalidate();
+                shelvesPanel.repaint();
+            }
+        }.start();
+    }
+
+    private void buildFrom(ArrayList<Community> all){
+        shelvesPanel.removeAll();
 
         // collect the unique categories
         ArrayList<String> categories = new ArrayList<>();
