@@ -26,12 +26,14 @@ public class RequestRouter {
     private FriendHandler friendHandler;
     private NotificationHandler notificationHandler = new NotificationHandler();
     private SpotifyHandler spotifyHandler = new SpotifyHandler();
+    private CommunityChatHandler communityChatHandler;
 
     public RequestRouter(ChatServer server) {
         this.server = server;
         this.forumHandler = new ForumHandler(server);
         this.messageHandler = new MessageHandler(server);
         this.friendHandler = new FriendHandler(server);
+        this.communityChatHandler = new CommunityChatHandler(server);
     }
 
     public Response handle(Request request, ClientHandler client) {
@@ -162,6 +164,14 @@ public class RequestRouter {
         }
         if (action.equals("forum.deleteComment")) {
             return forumHandler.deleteComment(request, client);
+        }
+
+        // community chat (guestbook)
+        if (action.equals("communityChat.post")) {
+            return communityChatHandler.post(request, client);
+        }
+        if (action.equals("communityChat.list")) {
+            return communityChatHandler.list(request, client);
         }
 
         // friends

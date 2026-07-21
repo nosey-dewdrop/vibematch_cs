@@ -228,6 +228,24 @@ public class Api {
         client.send("forum.deleteComment", Params.of().put("commentId", commentId).json());
     }
 
+    // ---- community chat (guestbook) ----
+
+    public void communityChatPost(int communityId, String body) {
+        client.send("communityChat.post", Params.of()
+                .put("communityId", communityId).put("body", body).json());
+    }
+
+    public ArrayList<model.CommunityMessage> communityChatList(int communityId) {
+        String data = client.send("communityChat.list",
+                Params.of().put("communityId", communityId).json());
+        model.CommunityMessage[] arr = Json.fromJson(data, model.CommunityMessage[].class);
+        ArrayList<model.CommunityMessage> list = new ArrayList<model.CommunityMessage>();
+        for (int i = 0; i < arr.length; i++) {
+            list.add(arr[i]);
+        }
+        return list;
+    }
+
     // ---- notifications ----
 
     public ArrayList<model.Notification> notifications(String username) {

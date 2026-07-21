@@ -208,6 +208,20 @@ public class Db {
             ")"
         );
 
+        // community guestbook: every member of a community can post a line here,
+        // and every member sees it. one row per message.
+        st.execute(
+            "CREATE TABLE IF NOT EXISTS community_messages (" +
+            "  id INTEGER PRIMARY KEY AUTOINCREMENT," +
+            "  community_id INTEGER NOT NULL," +
+            "  sender TEXT NOT NULL," +
+            "  body TEXT NOT NULL," +
+            "  created_at TEXT NOT NULL," +
+            "  FOREIGN KEY (community_id) REFERENCES communities(id)," +
+            "  FOREIGN KEY (sender) REFERENCES users(username)" +
+            ")"
+        );
+
         st.close();
     }
 
