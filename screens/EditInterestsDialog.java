@@ -72,7 +72,22 @@ public class EditInterestsDialog extends JDialog {
                         picked.add(Interests.ALL[i]);
                     }
                 }
-                api.setInterests(user.getUsername(), picked);
+                // keep any spotify-derived tags (music:*) -- they aren't chips
+                // here, so saving the chip selection alone would silently wipe
+                // the user's connected music taste.
+                for (int i = 0; i < user.getInterests().size(); i++) {
+                    String existing = user.getInterests().get(i);
+                    if (existing.startsWith("music:") && !picked.contains(existing)) {
+                        picked.add(existing);
+                    }
+                }
+                try {
+                    api.setInterests(user.getUsername(), picked);
+                } catch (IllegalArgumentException ex) {
+                    javax.swing.JOptionPane.showMessageDialog(EditInterestsDialog.this,
+                            ex.getMessage() == null ? "Couldn't save. Try again." : ex.getMessage());
+                    return;
+                }
                 user.setInterests(picked);
                 dispose();
                 if (onSaved != null) {

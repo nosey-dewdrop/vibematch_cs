@@ -123,7 +123,13 @@ public class InterestPanel extends JPanel {
                 picked.add(Interests.ALL[i]);
             }
         }
-        api.setInterests(user.getUsername(), picked);
+        try {
+            api.setInterests(user.getUsername(), picked);
+        } catch (IllegalArgumentException ex) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    ex.getMessage() == null ? "Couldn't save. Try again." : ex.getMessage());
+            return;
+        }
         user.setInterests(picked);
         Session.setUser(user);
         appFrame.startMbti(user);

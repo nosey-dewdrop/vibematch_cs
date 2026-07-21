@@ -229,6 +229,7 @@ public class ProfilePanel extends JPanel {
             conn.setAlignmentX(Component.LEFT_ALIGNMENT);
             conn.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    conn.setEnabled(false); // block a second click starting a 2nd flow
                     connectSpotify();
                 }
             });
@@ -255,13 +256,14 @@ public class ProfilePanel extends JPanel {
                 try {
                     api.connectSpotify(user.getUsername());
                 } catch (Exception ex) {
-                    err[0] = ex.getMessage();
+                    err[0] = ex.getMessage() == null ? "" : ex.getMessage();
                 }
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         wait.dispose();
                         if (err[0] != null) {
-                            javax.swing.JOptionPane.showMessageDialog(ProfilePanel.this, err[0]);
+                            javax.swing.JOptionPane.showMessageDialog(ProfilePanel.this,
+                                    err[0].trim().isEmpty() ? "Spotify connect failed. Try again." : err[0]);
                         }
                         // refresh: interests may have changed too
                         try {

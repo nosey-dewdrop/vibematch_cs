@@ -202,19 +202,39 @@ public class PostDao {
         }
     }
 
-    // delete a comment and any direct replies to it, so no orphaned replies
-    // are left pointing at a comment that no longer exists.
+    // delete a comment and its WHOLE reply subtree (replies, replies-to-replies,
+    // ...), so nothing is left orphaned and the "N comments" count stays right.
     public void deleteComment(int commentId) {
         try {
             Connection c = Db.getConnection();
-            PreparedStatement kids = c.prepareStatement("DELETE FROM comments WHERE parent_id = ?");
-            kids.setInt(1, commentId);
-            kids.executeUpdate();
-            kids.close();
-            PreparedStatement ps = c.prepareStatement("DELETE FROM comments WHERE id = ?");
-            ps.setInt(1, commentId);
-            ps.executeUpdate();
-            ps.close();
+            // walk the tree breadth-first collecting every descendant id
+            ArrayList<Integer> toDelete = new ArrayList<Integer>();
+            ArrayList<Integer> frontier = new ArrayList<Integer>();
+            toDelete.add(commentId);
+            frontier.add(commentId);
+            while (!frontier.isEmpty()) {
+                ArrayList<Integer> next = new ArrayList<Integer>();
+                for (int i = 0; i < frontier.size(); i++) {
+                    PreparedStatement q = c.prepareStatement(
+                        "SELECT id FROM comments WHERE parent_id = ?");
+                    q.setInt(1, frontier.get(i));
+                    ResultSet rs = q.executeQuery();
+                    while (rs.next()) {
+                        int child = rs.getInt("id");
+                        toDelete.add(child);
+                        next.add(child);
+                    }
+                    rs.close();
+                    q.close();
+                }
+                frontier = next;
+            }
+            PreparedStatement del = c.prepareStatement("DELETE FROM comments WHERE id = ?");
+            for (int i = 0; i < toDelete.size(); i++) {
+                del.setInt(1, toDelete.get(i));
+                del.executeUpdate();
+            }
+            del.close();
         } catch (SQLException e) {
             throw new RuntimeException("could not delete comment", e);
         }

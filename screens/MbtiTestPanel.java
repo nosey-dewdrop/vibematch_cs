@@ -171,10 +171,16 @@ public class MbtiTestPanel extends JPanel {
 
     private void finish() {
         // the server scores the answers and stores the type, so the result and
-        // whats saved can never drift apart
-        MbtiResult result = api.submitMbti(user.getUsername(), answers);
-        user.setMbtiType(result.getType());
-        Session.setUser(user);
-        appFrame.showVibeResult(user, result);
+        // whats saved can never drift apart. guard the network call so a hiccup
+        // on the last click shows a message instead of silently doing nothing.
+        try {
+            MbtiResult result = api.submitMbti(user.getUsername(), answers);
+            user.setMbtiType(result.getType());
+            Session.setUser(user);
+            appFrame.showVibeResult(user, result);
+        } catch (IllegalArgumentException ex) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    ex.getMessage() == null ? "Couldn't save your test. Try again." : ex.getMessage());
+        }
     }
 }

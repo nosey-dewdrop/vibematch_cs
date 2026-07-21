@@ -193,7 +193,13 @@ public class HomePanel extends JPanel implements CommunityCard.Listener {
     }
 
     public void join(Community c) {
-        api.join(user.getUsername(), c.getId());
+        try {
+            api.join(user.getUsername(), c.getId());
+        } catch (IllegalArgumentException ex) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    ex.getMessage() == null ? "Couldn't join. Try again." : ex.getMessage());
+            return;
+        }
         main.showHome(); // rebuild so the card flips to "Open"
     }
 }

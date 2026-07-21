@@ -81,6 +81,15 @@ public class RequestRouter {
             return Response.fail(request.id, "Please log in first.");
         }
 
+        // log out: drop this socket from the online map and clear who it is, so
+        // pushes for the old user don't land on whoever logs in next on this
+        // same client.
+        if (action.equals("logout")) {
+            server.unregister(client.getUsername());
+            client.setUsername(null);
+            return Response.reply(request.id, "{\"ok\":true}");
+        }
+
         // profile / onboarding
         if (action.equals("setInterests")) {
             return profileHandler.setInterests(request, client);

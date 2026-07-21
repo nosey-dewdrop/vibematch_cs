@@ -42,6 +42,8 @@ public class Api {
     }
 
     public static class ResendResult {
+        public String username;
+        public String email;
         public boolean emailed;
         public String code;
     }
@@ -71,6 +73,14 @@ public class Api {
         String data = client.send("login", Params.of()
                 .put("usernameOrEmail", usernameOrEmail).put("password", password).json());
         return Json.fromJson(data, User.class);
+    }
+
+    public void logout() {
+        try {
+            client.send("logout", Params.of().json());
+        } catch (Exception ignore) {
+            // logging out is best effort -- the client tears down regardless
+        }
     }
 
     // ---- profile / onboarding ----

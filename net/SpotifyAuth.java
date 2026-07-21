@@ -53,7 +53,9 @@ public class SpotifyAuth {
     private static final String SCOPE = "user-top-read";
     private static final String CREDS_FILE = "credentials.properties";
 
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(15))
+            .build();
 
     public static boolean isConfigured() {
         return notBlank(clientId());
@@ -112,14 +114,46 @@ public class SpotifyAuth {
                     + "&code_challenge=" + enc(challenge);
             openBrowser(authUrl);
 
-            // wait for spotify to redirect the browser back to us
-            Socket client = server.accept();
-            String code = readCodeFromRequest(client);
-            writeBrowserResponse(client, code != null);
-            client.close();
+            // Browsers (Chrome/Safari) open speculative preconnections that send
+            // zero bytes -- if we grabbed one of those and blindly read, we'd hang
+            // forever. So loop: accept, give each connection a short read timeout,
+            // and keep going until we get the real GET /callback with the code.
+            // The overall 2-minute budget is enforced by the ServerSocket timeout.
+            long deadline = System.currentTimeMillis() + 120000;
+            String code = null;
+            String error = null;
+            while (System.currentTimeMillis() < deadline) {
+                Socket client = null;
+                try {
+                    client = server.accept();          // bounded by setSoTimeout
+                    client.setSoTimeout(5000);         // don't block on a silent socket
+                    String[] result = readCallback(client);
+                    if (result != null && result[0] != null) {
+                        code = result[0];
+                        writeBrowserResponse(client, true);
+                        client.close();
+                        break;
+                    }
+                    if (result != null && result[1] != null) {
+                        // spotify sent ?error= (user denied) -- a real answer, stop
+                        error = result[1];
+                        writeBrowserResponse(client, false);
+                        client.close();
+                        break;
+                    }
+                    // empty/preconnect/favicon -- ignore and wait for the next one
+                    client.close();
+                } catch (java.net.SocketTimeoutException readTimeout) {
+                    // this one connection went quiet; drop it, keep waiting
+                    if (client != null) { try { client.close(); } catch (Exception ig) {} }
+                }
+            }
 
+            if (error != null) {
+                throw new IllegalArgumentException("Spotify sign-in was declined.");
+            }
             if (code == null) {
-                throw new IllegalArgumentException("Spotify sign-in was cancelled.");
+                throw new IllegalArgumentException("Spotify sign-in timed out. Try again.");
             }
             return code;
         } catch (IllegalArgumentException ie) {
@@ -133,15 +167,20 @@ public class SpotifyAuth {
         }
     }
 
-    // read the GET line and pull ?code= out of it (or ?error=)
-    private String readCodeFromRequest(Socket client) throws Exception {
+    // read the request line and pull out the auth code / error.
+    // returns {code, error}: both null = not our callback (preconnect/favicon),
+    // so the caller keeps waiting for the real redirect.
+    private String[] readCallback(Socket client) throws Exception {
         BufferedReader in = new BufferedReader(
                 new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8));
         String line = in.readLine();
         if (line == null) {
+            return null; // empty preconnect
+        }
+        // only the real redirect is GET /callback?... ; ignore favicon etc.
+        if (!line.startsWith("GET /callback")) {
             return null;
         }
-        // line looks like: GET /callback?code=XXXX&... HTTP/1.1
         int q = line.indexOf('?');
         int sp = line.lastIndexOf(" HTTP");
         if (q < 0 || sp < 0 || sp <= q) {
@@ -149,13 +188,17 @@ public class SpotifyAuth {
         }
         String query = line.substring(q + 1, sp);
         String[] parts = query.split("&");
+        String code = null;
+        String error = null;
         for (int i = 0; i < parts.length; i++) {
             String[] kv = parts[i].split("=", 2);
             if (kv.length == 2 && kv[0].equals("code")) {
-                return java.net.URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
+                code = java.net.URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
+            } else if (kv.length == 2 && kv[0].equals("error")) {
+                error = java.net.URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
             }
         }
-        return null;
+        return new String[] { code, error };
     }
 
     private void writeBrowserResponse(Socket client, boolean ok) throws Exception {
@@ -187,6 +230,7 @@ public class SpotifyAuth {
         try {
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create("https://accounts.spotify.com/api/token"))
+                    .timeout(java.time.Duration.ofSeconds(15))
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .POST(HttpRequest.BodyPublishers.ofString(form))
                     .build();
@@ -321,6 +365,7 @@ public class SpotifyAuth {
     private JsonObject getJson(String url, String accessToken) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(java.time.Duration.ofSeconds(15))
                 .header("Authorization", "Bearer " + accessToken)
                 .GET()
                 .build();

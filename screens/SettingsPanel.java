@@ -106,6 +106,7 @@ public class SettingsPanel extends JPanel {
             "Log out of vibematch?", "Log out",
             JOptionPane.YES_NO_OPTION);
         if (choice == JOptionPane.YES_OPTION) {
+            net.Api.get().logout(); // tell the server to drop this socket's user
             main.detach(); // stop listening for pushes for this session
             Session.clear();
             main.getAppFrame().showLogin();

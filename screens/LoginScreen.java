@@ -133,6 +133,27 @@ public class LoginScreen extends JPanel {
             Session.setUser(u);
             appFrame.routeAfterLogin(u);
         } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage();
+            // password was right but the account was never verified -- don't dead
+            // end the user. send a fresh code and take them to the verify screen.
+            if (msg != null && msg.toLowerCase().contains("verify")) {
+                recoverUnverified(user);
+                return;
+            }
+            errorLabel.setText(msg);
+        }
+    }
+
+    // the account exists but isn't verified: resend a code and open verify.
+    private void recoverUnverified(String usernameOrEmail) {
+        try {
+            Api.ResendResult r = api.resend(usernameOrEmail, "");
+            if (!r.emailed && r.code != null) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                        "Email isn't set up, so here's your code: " + r.code);
+            }
+            appFrame.showVerify(r.username, r.email);
+        } catch (IllegalArgumentException ex) {
             errorLabel.setText(ex.getMessage());
         }
     }

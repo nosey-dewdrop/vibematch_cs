@@ -82,7 +82,7 @@ public class SpotifyDao {
         }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < list.size(); i++) {
-            if (i > 0) sb.append(",");
+            if (i > 0) sb.append(SEP);
             sb.append(list.get(i));
         }
         return sb.toString();
@@ -93,7 +93,9 @@ public class SpotifyDao {
         if (s == null || s.trim().isEmpty()) {
             return list;
         }
-        String[] parts = s.split(",");
+        // split on the unit separator, NOT a comma -- artist names like
+        // "Tyler, The Creator" contain commas and would be torn in two.
+        String[] parts = s.split(java.util.regex.Pattern.quote(SEP));
         for (int i = 0; i < parts.length; i++) {
             String t = parts[i].trim();
             if (!t.isEmpty()) {
@@ -102,4 +104,7 @@ public class SpotifyDao {
         }
         return list;
     }
+
+    // ASCII unit separator: can't appear in an artist or genre name
+    private static final String SEP = "";
 }

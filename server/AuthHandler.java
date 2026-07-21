@@ -111,11 +111,35 @@ public class AuthHandler {
     public Response resend(Request req) {
         String username = req.getString("username");
         String email = req.getString("email");
+
+        // let the caller pass just a username (or an email in the username field)
+        // and look up the address ourselves -- this is what lets the login screen
+        // recover an unverified account without already knowing the email.
+        User u = null;
+        if (username != null && username.indexOf('@') >= 0) {
+            u = userDao.findByEmail(username.toLowerCase());
+        } else if (username != null) {
+            u = userDao.findByUsername(username);
+        }
+        if (u == null && email != null && !email.isEmpty()) {
+            u = userDao.findByEmail(email.toLowerCase());
+        }
+        if (u == null) {
+            return Response.fail(req.id, "No account found to verify.");
+        }
+        if (u.isVerified()) {
+            return Response.fail(req.id, "This account is already verified. Just log in.");
+        }
+        username = u.getUsername();
+        email = u.getEmail();
+
         String code = auth.generateVerificationCode();
         storeCode(username, code);
         boolean emailed = EmailSender.sendVerificationCode(email, code);
 
         JsonObject data = new JsonObject();
+        data.addProperty("username", username);
+        data.addProperty("email", email);
         data.addProperty("emailed", emailed);
         if (!emailed) {
             data.addProperty("code", code);
